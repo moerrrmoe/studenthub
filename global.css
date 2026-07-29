@@ -1,0 +1,13 @@
+@import 'tailwindcss';
+@import 'uniwind';
+
+input:focus {
+    outline: none;
+    box-shadow: none;
+    /* Required for Bootstrap or specific browser styles */
+}
+
+textarea:focus {
+    outline: none;
+    box-shadow: none;
+}
