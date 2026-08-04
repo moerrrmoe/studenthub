@@ -1,13 +1,41 @@
 @import 'tailwindcss';
 @import 'uniwind';
 
+:root {
+  --color-primary: #2563eb;
+  --color-primary-light: #dbeafe;
+  --color-bg: #f5f6f8;
+  --color-surface: #ffffff;
+  --color-border: #e5e7eb;
+  --color-text: #1f2937;
+  --color-text-secondary: #6b7280;
+  --color-text-muted: #9ca3af;
+}
+
 input:focus {
-    outline: none;
-    box-shadow: none;
-    /* Required for Bootstrap or specific browser styles */
+  outline: none;
+  box-shadow: none;
 }
 
 textarea:focus {
-    outline: none;
-    box-shadow: none;
+  outline: none;
+  box-shadow: none;
+}
+
+/* Smooth scrollbar for web */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
 }

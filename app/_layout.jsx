@@ -55,7 +55,7 @@ export default function RootLayout() {
     <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
 
       <ClerkLoaded>
-        <SafeAreaView className="flex-1 bg-[#F3F5F7]">
+        <SafeAreaView className="flex-1 bg-[#f5f6f8]">
           <InitialLayout />
         </SafeAreaView>
       </ClerkLoaded>

@@ -3,10 +3,11 @@ import { FontAwesome, FontAwesome5, Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LayoutAnimation, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import ImageCarousel from "./image-carousel";
 import { Card, CardContent, CardFooter, CardHeader } from "./ui/card";
+
 
 const PostCard = ({
   postId,
@@ -17,10 +18,14 @@ const PostCard = ({
   postImages,
   authorName,
   authorAvatar,
+  authorId,
+  postComments = [],
+  isDetailView = false
 }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   // Added some mock data to show how the conversation UI looks
   const [aiConversation, setAiConversation] = useState([
-    { role: "ai", text: "This post is about standardizing UI components in React Native. What would you like me to explain?" }
+    { role: "user", content: "Please explain the post" }
   ]);
   const [isAIExplainPressed, setIsAIExplainPressed] = useState(false);
   const { user } = useUser()
@@ -28,6 +33,29 @@ const PostCard = ({
   const [isLiked, setIsLiked] = useState(false);
   const [isDisliked, setIsDisliked] = useState(false);
   const [likesCount, setLikesCount] = useState(postLikes?.length || 0);
+  const [commentsCount, setCommentsCount] = useState(postComments?.length || 0);
+  const [isAiReasoning, setIsAiReasoning] = useState(false);
+  const [shouldScroll, setShouldScroll] = useState(false);
+  const scrollViewRef = useRef(null);
+
+  useEffect(() => {
+    if (shouldScroll && scrollViewRef.current) {
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+        setShouldScroll(false);
+      }, 100);
+    }
+  }, [shouldScroll]);
+
+  // Nudge scroll a bit when assistant response arrives
+  useEffect(() => {
+    const lastMsg = aiConversation[aiConversation.length - 1];
+    if (lastMsg?.role === 'assistant' && scrollViewRef.current) {
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 150);
+    }
+  }, [aiConversation.length]);
 
   useEffect(() => {
     if (user?.id && postLikes) {
@@ -41,10 +69,19 @@ const PostCard = ({
     }
   }, [postLikes]);
 
-  const toggleAISection = () => {
-    // Optional: Adds a smooth expansion animation when opening/closing the chat
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+  const toggleAISection = async () => {
     setIsAIExplainPressed(!isAIExplainPressed);
+    if (aiConversation.length === 1) {
+      try {
+        setIsAiReasoning(true);
+        const res = await axios.post("http://localhost:8080/ai/post-explain", { id: postId, role: "user", content: `post-title:${postTitle} \n post-body:${postBody}`, messages: aiConversation });
+        console.log(res.data);
+        setAiConversation(prev => [...prev, { role: "assistant", content: res.data.data }]);
+      } finally {
+        setIsAiReasoning(false);
+      }
+    }
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
   };
 
   const handleLike = async () => {
@@ -60,39 +97,62 @@ const PostCard = ({
     }
   }
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!inputText.trim()) return;
-
-    // Add user message to conversation
-    setAiConversation([...aiConversation, { role: "user", text: inputText }]);
+    setAiConversation(prev => [...prev, { role: "user", content: inputText }]);
     setInputText("");
-
-    // TODO: Trigger your AI API call here
+    setShouldScroll(true);
+    try {
+      setIsAiReasoning(true);
+      const res = await axios.post("http://localhost:8080/ai/post-explain", { id: postId, role: "user", content: inputText, messages: aiConversation });
+      setAiConversation(prev => [...prev, { role: "assistant", content: res.data.data }]);
+    } finally {
+      setIsAiReasoning(false);
+    }
   };
 
   return (
-    <Card className="mt-2 mb-1 bg-[#FEFEFF] w-full border border-[#ccc]">
+    <Card className="mt-3 mb-1 bg-white w-full border border-gray-200">
       <CardHeader>
-        <View className="flex-row items-center gap-2">
+        <View className="flex-row items-center gap-3">
           <Image
             source={authorAvatar}
-            className="w-[50px] h-[50px] rounded-full"
+            className="w-[42px] h-[42px] rounded-full bg-gray-100"
           />
-          <View className="flex flex-col">
+          <View className="flex flex-col flex-1">
             <View className="flex flex-row items-center gap-2">
-              <Text className="text-md font-bold text-black">{authorName}</Text>
-              <Text className="text-sm font-thin">•</Text>
-              <Text className="text-sm text-blue-600">Follow+</Text>
+              <Text className="text-sm font-semibold text-gray-900">{authorName}</Text>
+              <Text className="text-gray-300">·</Text>
+              {authorId !== user?.id && (
+                <Pressable><Text className="text-sm font-medium text-blue-600">Follow</Text></Pressable>
+              )}
             </View>
-            <Text className="text-sm text-gray-500">Post time</Text>
+            <Text className="text-xs text-gray-400 mt-0.5">Post time</Text>
           </View>
+          <Pressable className="p-1.5 rounded-full hover:bg-gray-100">
+            <Ionicons name="ellipsis-horizontal" size={18} color="#9ca3af" />
+          </Pressable>
         </View>
       </CardHeader>
 
       <CardContent>
-        <View className="mb-5">
-          <Text className="text-lg font-medium mb-2">{postTitle || ""}</Text>
-          <Text>{postBody || ""}</Text>
+        <View className="mb-4">
+          {postTitle ? <Text className="text-base font-semibold text-gray-900 mb-1.5">{postTitle}</Text> : null}
+          {postBody ? (
+            <Text className="text-sm text-gray-600 leading-5">
+              {!isDetailView && postBody.length > 180 && !isExpanded
+                ? `${postBody.substring(0, 180)}...`
+                : postBody}
+              {!isDetailView && postBody.length > 180 && (
+                <Text
+                  className="text-blue-600 font-semibold"
+                  onPress={() => setIsExpanded(!isExpanded)}
+                >
+                  {isExpanded ? " Show less" : " See more"}
+                </Text>
+              )}
+            </Text>
+          ) : null}
         </View>
         {postImages && postImages.length > 0 ? (
           <ImageCarousel images={postImages} />
@@ -105,87 +165,96 @@ const PostCard = ({
       </CardContent>
 
       <CardFooter>
-        <View className="flex-row gap-3 bg-[#E4EBEC] p-2 rounded-full items-center">
-          <Pressable onPress={handleLike}>
+        <View className="flex-row gap-2 bg-gray-100 py-1.5 px-3 rounded-full items-center">
+          <Pressable onPress={handleLike} className="p-1">
             {isLiked ? (
-              <FontAwesome name="thumbs-up" size={24} color="#2563eb" />
+              <FontAwesome name="thumbs-up" size={20} color="#2563eb" />
             ) : (
-              <FontAwesome5 name="thumbs-up" size={22} color="black" />
+              <FontAwesome5 name="thumbs-up" size={18} color="#6b7280" />
             )}
           </Pressable>
-          <Text className="text-[18px] font-medium">{likesCount}</Text>
-          <Text className="text-[#ccc]">|</Text>
-          <Pressable onPress={() => setIsDisliked(!isDisliked)}>
+          <Text className="text-sm font-semibold text-gray-700">{likesCount}</Text>
+          <View className="w-px h-4 bg-gray-300" />
+          <Pressable onPress={() => setIsDisliked(!isDisliked)} className="p-1">
             {isDisliked ? (
-              <FontAwesome name="thumbs-down" className="scale-x-[-1]" size={24} color="#2563eb" />
+              <FontAwesome name="thumbs-down" className="scale-x-[-1]" size={20} color="#2563eb" />
             ) : (
-              <FontAwesome5 name="thumbs-down" className="scale-x-[-1]" size={22} color="black" />
+              <FontAwesome5 name="thumbs-down" className="scale-x-[-1]" size={18} color="#6b7280" />
             )}
           </Pressable>
         </View>
-        <Pressable onPress={() => router.push('/post/' + postId)} className="flex-row ml-4 p-2 bg-[#E4EBEC] rounded-full gap-3 justify-start items-center">
-          <View>
-            <Ionicons name="chatbubble-outline" size={22} color="black" />
-          </View>
-          <Text className="text-[18px] font-medium">0</Text>
+        <Pressable onPress={() => router.push('/post/' + postId)} className="flex-row ml-3 py-1.5 px-3 bg-gray-100 rounded-full gap-2 items-center hover:bg-gray-200">
+          <Ionicons name="chatbubble-outline" size={18} color="#6b7280" />
+          <Text className="text-sm font-semibold text-gray-700">{commentsCount}</Text>
         </Pressable>
 
         {/* Added toggle functionality to the Explain button */}
         <Pressable
           onPress={toggleAISection}
-          className={`ml-auto flex-row items-center rounded-full px-3 py-1 gap-1 border ${isAIExplainPressed
+          className={`ml-auto flex-row items-center rounded-full px-3 py-1.5 gap-1.5 border ${isAIExplainPressed
             ? 'bg-blue-100 border-blue-200'
-            : 'bg-blue-50 border-blue-100 hover:bg-blue-200'
+            : 'bg-gray-50 border-gray-200 hover:bg-blue-50 hover:border-blue-200'
             }`}
         >
-          <Ionicons name="sparkles" size={20} color="#2563eb" />
-          <Text className="text-blue-600 font-semibold">Explain</Text>
+          <Ionicons name="sparkles" size={16} color="#2563eb" />
+          <Text className="text-sm text-blue-600 font-semibold">Explain</Text>
         </Pressable>
       </CardFooter>
 
       {/* --- AI CHAT INTEGRATION --- */}
       {isAIExplainPressed && (
-        <View className="border-t border-gray-200 bg-[#f8fafc] p-4 rounded-b-xl">
+        <View className="border-t border-gray-100 bg-gray-50 p-4 rounded-b-xl">
 
           {/* Header */}
-          <View className="flex-row items-center gap-2 mb-4">
-            <Ionicons name="sparkles" size={16} color="#2563eb" />
-            <Text className="font-bold text-gray-700">AI Explainer</Text>
+          <View className="flex-row items-center gap-2 mb-3">
+            <View className="w-6 h-6 rounded-full bg-blue-100 items-center justify-center">
+              <Ionicons name="sparkles" size={12} color="#2563eb" />
+            </View>
+            <Text className="font-semibold text-sm text-gray-700">AI Explainer</Text>
           </View>
 
+
           {/* Chat History */}
-          <ScrollView className="max-h-[250px] mb-4" showsVerticalScrollIndicator={false}>
+          <ScrollView ref={scrollViewRef} className="max-h-[250px] mb-3" showsVerticalScrollIndicator={false}>
             {aiConversation.map((msg, index) => (
               <View
                 key={index}
-                className={`mb-3 p-3 rounded-2xl max-w-[85%] ${msg.role === 'user'
+                className={`mb-2.5 p-3 rounded-2xl max-w-[85%] ${msg.role === 'user'
                   ? 'bg-blue-600 self-end rounded-tr-sm'
                   : 'bg-white border border-gray-200 self-start rounded-tl-sm'
                   }`}
               >
-                <Text className={msg.role === 'user' ? 'text-white' : 'text-gray-800'}>
-                  {msg.text}
+                <Text className={`text-sm leading-5 ${msg.role === 'user' ? 'text-white' : 'text-gray-700'}`}>
+                  {msg.content}
                 </Text>
               </View>
             ))}
+            {isAiReasoning && (
+              <View className="flex-row items-center gap-2 ml-1 mb-2">
+                <View className="w-5 h-5 rounded-full bg-blue-100 items-center justify-center">
+                  <Ionicons name="sparkles" size={10} color="#2563eb" />
+                </View>
+                <Text className="text-gray-400 text-xs italic">Thinking...</Text>
+              </View>
+            )}
           </ScrollView>
 
           {/* Chat Input */}
-          <View className="flex-row items-center bg-white border border-gray-300 rounded-full pl-4 pr-1 py-1">
+          <View className="flex-row items-center bg-white border border-gray-200 rounded-full pl-4 pr-1.5 py-1">
             <TextInput
-              className="flex-1 py-2 text-base text-gray-800"
+              className="flex-1 py-2 text-sm text-gray-800"
               placeholder="Ask a follow-up question..."
-              placeholderTextColor="#94a3b8"
+              placeholderTextColor="#9ca3af"
               value={inputText}
               onChangeText={setInputText}
               onSubmitEditing={handleSendMessage}
             />
             <Pressable
               onPress={handleSendMessage}
-              className={`p-2 rounded-full ${inputText.trim() ? 'bg-blue-600' : 'bg-gray-300'}`}
+              className={`p-2 rounded-full ${inputText.trim() ? 'bg-blue-600' : 'bg-gray-200'}`}
               disabled={!inputText.trim()}
             >
-              <Ionicons name="arrow-up" size={20} color="white" />
+              <Ionicons name="arrow-up" size={16} color="white" />
             </Pressable>
           </View>
 

@@ -56,13 +56,16 @@ export function SignInForm() {
   }
 
   return (
-    <View className="gap-6">
+    <View className="gap-6 w-full max-w-[400px]">
+      <View className="items-center mb-1">
+        <Text className="text-3xl text-blue-600 font-bold tracking-tight">StudentHub</Text>
+      </View>
       <Card className="border-border/0 sm:border-border shadow-none sm:shadow-sm sm:shadow-black/5">
         <CardHeader>
-          <CardTitle className="text-center text-xl sm:text-left">
-            Welcome!
+          <CardTitle className="text-center text-xl">
+            Welcome Back
           </CardTitle>
-          <CardDescription className="text-center sm:text-left">
+          <CardDescription className="text-center">
             Please sign in to continue
           </CardDescription>
         </CardHeader>
@@ -94,7 +97,7 @@ export function SignInForm() {
                     // TODO: Navigate to forgot password screen
                   }}
                 >
-                  <Text className="font-normal leading-4">
+                  <Text className="font-normal leading-4 text-blue-600">
                     Forgot your password?
                   </Text>
                 </Button>
@@ -112,7 +115,7 @@ export function SignInForm() {
             </View>
             <Button
               variant="default"
-              className="w-full bg-indigo-600 text-white "
+              className="w-full bg-blue-600 text-white hover:bg-blue-700"
               onPress={onSubmit}
               disabled={loading || !isLoaded}
             >
@@ -128,7 +131,7 @@ export function SignInForm() {
                 router.push("/sign-up");
               }}
             >
-              <Text className="text-sm underline underline-offset-4">
+              <Text className="text-sm text-blue-600 underline underline-offset-4">
                 Sign up
               </Text>
             </Pressable>

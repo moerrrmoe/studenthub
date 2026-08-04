@@ -80,22 +80,29 @@ const CreatePost = () => {
 
 
     return (
-        <View className="flex-1 bg-[#F3F5F7]">
-            <View className='flex-row justify-between items-center bg-[#fefefe]  px-2 py-4 border-b-1 border-gray-200'>
-                <Pressable onPress={() => {
-                    if (router.canGoBack()) { router.back() }
-                    else { router.replace("/home") }
-                }}>
-                    <Ionicons name="close" size={24} color="black" />
+        <View className="flex-1 bg-[#f5f6f8]">
+            <View className='flex-row justify-between items-center bg-white px-4 py-3 border-b border-gray-200'>
+                <Pressable
+                    onPress={() => {
+                        if (router.canGoBack()) { router.back() }
+                        else { router.replace("/home") }
+                    }}
+                    className="p-1.5 rounded-full hover:bg-gray-100"
+                >
+                    <Ionicons name="close" size={22} color="#6b7280" />
                 </Pressable>
-                <Text className='text-lg font-semibold'>Create Post</Text>
-                <View className='px-2'>
-
-                </View>
+                <Text className='text-base font-semibold text-gray-900'>Create Post</Text>
+                <Pressable
+                    disabled={description.trim().length === 0}
+                    onPress={() => createPost()}
+                    className={`px-4 py-1.5 rounded-full ${description.trim().length === 0 ? 'bg-gray-200' : 'bg-blue-600'}`}
+                >
+                    <Text className={`text-sm font-semibold ${description.trim().length === 0 ? 'text-gray-400' : 'text-white'}`}>Post</Text>
+                </Pressable>
             </View>
-            <View className='p-3'>
-                <TextInput onChangeText={(e) => setTitle(e)} placeholder='Title' placeholderTextColor="gray" className='text-xl font-semibold text-black mb-2' />
-                <TextInput onChangeText={(e) => setDescription(e)} placeholder="Description" multiline={true} numberOfLines={10} placeholderTextColor="gray" className='text-base text-black' />
+            <View className='p-4'>
+                <TextInput onChangeText={(e) => setTitle(e)} placeholder='Title' placeholderTextColor="#9ca3af" className='text-lg font-semibold text-gray-900 mb-2' />
+                <TextInput onChangeText={(e) => setDescription(e)} placeholder="What's on your mind?" multiline={true} numberOfLines={10} placeholderTextColor="#9ca3af" className='text-sm text-gray-600 leading-5' />
             </View>
             <View className='p-3 w-full justify-center items-center'>
                 <View className='w-full max-w-[500px]'>
@@ -103,14 +110,10 @@ const CreatePost = () => {
                 </View>
             </View>
 
-            <View className='flex-row items-center bg-[#fefefe] mt-auto border-t-1 justify-between border-gray-200 py-3 px-2'>
-                <Pressable onPress={() => pickImages()}>
-                    <Ionicons name="image-outline" size={30} color="black" />
+            <View className='flex-row items-center bg-white mt-auto border-t border-gray-200 py-3 px-4 gap-3'>
+                <Pressable onPress={() => pickImages()} className="p-2 rounded-full hover:bg-gray-100">
+                    <Ionicons name="image-outline" size={24} color="#6b7280" />
                 </Pressable>
-                <Pressable disabled={description.trim().length === 0} onPress={() => createPost()}>
-                    <Ionicons name="send" size={32} color={description.trim().length === 0 ? "gray" : "black"} />
-                </Pressable>
-
             </View>
         </View>
     )

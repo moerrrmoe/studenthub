@@ -1,115 +1,106 @@
+import { useAuth, useUser } from "@clerk/expo";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useState } from "react";
+import axios from "axios";
+import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import { FlatList, Image, Platform, Pressable, Text, View } from "react-native";
 
-const ChatList = () => {
-  const [activeChat, setActiveChat] = useState("1");
-  const [activeFilter, setActiveFilter] = useState("All");
+const ChatList = ({ activeChatId, searchQuery = "" }) => {
+  const router = useRouter();
+  const [conversations, setConversations] = useState([]);
+  const { user } = useUser();
+  const { getToken } = useAuth();
 
-  const conversations = [
-    {
-      id: "1",
-      conversationName: "Study Group",
-      conversationImage: "https://i.pravatar.cc/150?img=11",
-      conversationMessage: "Will do! See you at 6! Don't forget the snacks!",
-      conversationTime: "12:17 PM",
-      unread: 3,
-      isOnline: true,
-      isGroup: true,
-    },
-    {
-      id: "2",
-      conversationName: "Alice Smith",
-      conversationImage: "https://i.pravatar.cc/150?img=32",
-      conversationMessage: "Can you send me the database files?",
-      conversationTime: "11:30 AM",
-      unread: 0,
-      isOnline: true,
-      isGroup: false,
-    },
-    {
-      id: "3",
-      conversationName: "Prof. Davis",
-      conversationImage: "https://i.pravatar.cc/150?img=68",
-      conversationMessage: "Your recommendation letter is ready.",
-      conversationTime: "Yesterday",
-      unread: 1,
-      isOnline: false,
-      isGroup: false,
-    },
-    {
-      id: "4",
-      conversationName: "Design Team",
-      conversationImage: "https://i.pravatar.cc/150?img=45",
-      conversationMessage: "Elena: I updated the Figma file.",
-      conversationTime: "Tuesday",
-      unread: 0,
-      isOnline: false,
-      isGroup: true,
-    },
-  ];
+  useEffect(() => {
+    const fetchConversations = async () => {
+      try {
+        const token = await getToken();
+        const res = await axios.get("http://localhost:8080/chat/belonging?page=1", {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
 
-  const filteredConversations = conversations.filter(chat =>
-    activeFilter === "Unread" ? chat.unread > 0 : true
-  );
+        if (res.data.success) {
+          setConversations(res.data.data[0]);
+        } else {
+          console.log(res.data.message);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    if (!searchQuery.trim()) {
+      fetchConversations();
+    }
+  }, [user, searchQuery]);
+
+  // Debounced search
+  useEffect(() => {
+    if (!searchQuery.trim()) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        const token = await getToken();
+        const res = await axios.get(
+          `http://localhost:8080/chat/search?query=${encodeURIComponent(searchQuery.trim())}&page=1`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (res.data.success) {
+          setConversations(res.data.data[0]);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const renderItem = ({ item }) => {
-    const isActive = activeChat === item.id;
-    const hasUnread = item.unread > 0;
+    const isActive = activeChatId === item.id;
 
     return (
       <Pressable
-        onPress={() => setActiveChat(item.id)}
-        className={`flex-row items-center px-4 py-3 border-b border-gray-100 transition-colors cursor-pointer
+        onPress={() => router.push(`/chat/${item?.id}`)}
+        className={`flex-row items-center px-4 py-3 border-b border-gray-100 cursor-pointer
           ${isActive ? 'bg-blue-50' : 'bg-white hover:bg-gray-50'}
         `}
       >
         {/* Active state left indicator */}
         {isActive && (
-          <View className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r-md" />
+          <View className="absolute left-0 top-0 bottom-0 w-0.5 bg-blue-600" />
         )}
 
-        {/* Avatar with Online Indicator */}
+        {/* Avatar */}
         <View className="relative mr-3">
           <Image
-            source={{ uri: item.conversationImage }}
-            className="w-12 h-12 rounded-full bg-gray-200"
+            source={{ uri: item.conversationImage || "https://placehold.co/150x150" }}
+            className="w-10 h-10 rounded-full bg-gray-100"
           />
-          {item.isOnline && (
-            <View className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full" />
-          )}
         </View>
 
         {/* Message Content */}
         <View className="flex-1 justify-center">
-          <View className="flex-row justify-between items-center mb-1">
+          <View className="flex-row justify-between items-center mb-0.5">
             <Text
-              className={`text-[15px] ${hasUnread ? 'font-bold text-gray-900' : 'font-semibold text-gray-800'}`}
+              className="text-sm font-semibold text-gray-900"
               numberOfLines={1}
             >
-              {item.conversationName}
+              {item?.name || item?.members?.find((member) => member?.userId !== user?.id)?.user?.firstName + " " + item?.members?.find((member) => member?.userId !== user?.id)?.user?.lastName}
             </Text>
-            <Text className={`text-xs ${hasUnread ? 'text-blue-600 font-bold' : 'text-gray-500'}`}>
+            <Text className="text-[11px] text-gray-400">
               {item.conversationTime}
             </Text>
           </View>
 
           <View className="flex-row justify-between items-center">
             <Text
-              className={`text-[13px] flex-1 mr-2 ${hasUnread ? 'text-gray-800 font-medium' : 'text-gray-500'}`}
+              className="text-xs flex-1 mr-2 text-gray-400"
               numberOfLines={1}
             >
               {item.conversationMessage}
             </Text>
-
-            {/* Unread Badge */}
-            {hasUnread && (
-              <View className="bg-blue-600 rounded-full min-w-[20px] h-[20px] items-center justify-center px-1">
-                <Text className="text-white text-[10px] font-bold">
-                  {item.unread}
-                </Text>
-              </View>
-            )}
           </View>
         </View>
       </Pressable>
@@ -119,42 +110,71 @@ const ChatList = () => {
   return (
     <View className="flex-1 bg-white">
       {/* Sidebar Header */}
-      <View className="px-4 py-4 flex-row justify-between items-center border-b border-gray-100">
-        <Text className="text-xl font-bold text-gray-800">Messages</Text>
-        <Pressable className="bg-gray-100 hover:bg-gray-200 p-2 rounded-full transition-colors cursor-pointer">
-          <Ionicons name="create-outline" size={20} color="#374151" />
+      <View className="px-4 py-3 flex-row justify-between items-center border-b border-gray-100">
+        <Text className="text-base font-semibold text-gray-900">Messages</Text>
+        <Pressable className="p-1.5 rounded-full hover:bg-gray-100 cursor-pointer">
+          <Ionicons name="create-outline" size={18} color="#9ca3af" />
         </Pressable>
-      </View>
-
-      {/* Filter Tabs */}
-      <View className="px-4 py-2 flex-row gap-2 border-b border-gray-100">
-        {["All", "Unread"].map((filter) => (
-          <Pressable
-            key={filter}
-            onPress={() => setActiveFilter(filter)}
-            className={`px-4 py-1.5 rounded-full border cursor-pointer transition-colors ${activeFilter === filter
-                ? 'bg-blue-50 border-blue-200'
-                : 'bg-white border-gray-200 hover:bg-gray-50'
-              }`}
-          >
-            <Text className={`text-sm ${activeFilter === filter ? 'text-blue-700 font-semibold' : 'text-gray-600'
-              }`}>
-              {filter}
-            </Text>
-          </Pressable>
-        ))}
       </View>
 
       {/* List */}
       <FlatList
-        data={filteredConversations}
+        data={conversations}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         showsVerticalScrollIndicator={Platform.OS === 'web'}
+        ListHeaderComponent={
+          <Pressable
+            className="flex-row items-center px-4 py-3 border-b border-gray-100 hover:bg-indigo-50 cursor-pointer"
+            style={{ backgroundColor: '#fafafe' }}
+            onPress={() => router.push("/chat/ai")}
+          >
+            {/* AI Avatar */}
+            <View className="relative mr-3">
+              <View
+                className="w-10 h-10 rounded-full items-center justify-center"
+                style={{ backgroundColor: '#6366f1' }}
+              >
+                <Ionicons name="sparkles" size={16} color="white" />
+              </View>
+              <View
+                className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white"
+                style={{ backgroundColor: '#22c55e' }}
+              />
+            </View>
+
+            {/* AI Chat Content */}
+            <View className="flex-1 justify-center">
+              <View className="flex-row items-center gap-1.5 mb-0.5">
+                <Text
+                  className="text-sm font-semibold"
+                  style={{ color: '#4338ca' }}
+                  numberOfLines={1}
+                >
+                  Student Hub AI
+                </Text>
+                <View
+                  className="px-1 py-px rounded"
+                  style={{ backgroundColor: '#6366f1' }}
+                >
+                  <Text className="text-[8px] font-bold text-white">AI</Text>
+                </View>
+              </View>
+              <Text
+                className="text-[11px] text-gray-400"
+                numberOfLines={1}
+              >
+                Ask me anything
+              </Text>
+            </View>
+
+            <Ionicons name="chevron-forward" size={14} color="#c7d2fe" />
+          </Pressable>
+        }
         className="flex-1"
         ListEmptyComponent={
           <View className="flex-1 items-center justify-center py-10">
-            <Text className="text-gray-400 text-sm">No conversations found.</Text>
+            <Text className="text-gray-400 text-xs">No conversations found.</Text>
           </View>
         }
       />

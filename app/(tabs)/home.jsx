@@ -23,7 +23,7 @@ const Home = () => {
         setIsLoading(false)
       }
     }
-    if (user?.id) {
+    if (user?.id && posts.length === 0) {
       getFeed()
     }
   }, [user])
@@ -37,7 +37,7 @@ const Home = () => {
   }
 
   return (
-    <View className="h-[100vh] w-full items-center">
+    <View className="flex-1 w-full items-center bg-[#f5f6f8]">
       <FlatList
         data={posts}
         keyExtractor={(item, index) => index.toString()}
@@ -52,8 +52,10 @@ const Home = () => {
               postTitle={item.title}
               postBody={item.content.text}
               postImages={item.content.images}
+              authorId={item.authorId}
               authorName={item.author.firstName + ' ' + item.author.lastName}
               authorAvatar="https://placehold.co/100x100"
+              postComments={item.comments}
             />
           </View>
         )}

@@ -4,7 +4,7 @@ import { View } from "react-native";
 
 function SignUp() {
   return (
-    <View className="flex-1 justify-center items-center ">
+    <View className="flex-1 justify-center items-center bg-[#f5f6f8]">
       <SignUpForm />
     </View>
   );
