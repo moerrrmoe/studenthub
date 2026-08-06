@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Text } from "@/components/ui/text";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import * as React from "react";
 import { Pressable, View, Alert } from "react-native";
@@ -56,25 +57,38 @@ export function SignInForm() {
   }
 
   return (
-    <View className="gap-6 w-full max-w-[400px]">
-      <View className="items-center mb-1">
-        <Text className="text-3xl text-blue-600 font-bold tracking-tight">StudentHub</Text>
+    <View className="gap-6 w-full max-w-[420px] px-2 sm:px-0">
+      {/* Brand Header */}
+      <View className="items-center justify-center gap-2 mb-2">
+        <View className="w-14 h-14 rounded-2xl bg-blue-600 items-center justify-center shadow-lg shadow-blue-500/30">
+          <Ionicons name="school" size={30} color="#ffffff" />
+        </View>
+        <Text className="text-3xl text-slate-900 font-extrabold tracking-tight">
+          Student<Text className="text-blue-600">Hub</Text>
+        </Text>
+        <Text className="text-sm text-slate-500 font-medium text-center">
+          The central hub for your academic journey
+        </Text>
       </View>
-      <Card className="border-border/0 sm:border-border shadow-none sm:shadow-sm sm:shadow-black/5">
-        <CardHeader>
-          <CardTitle className="text-center text-xl">
-            Welcome Back
+
+      <Card className="bg-white/95 border-slate-200/80 rounded-2xl shadow-xl shadow-slate-200/50 p-2 sm:p-4">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-center text-xl font-bold text-slate-800">
+            Welcome back
           </CardTitle>
-          <CardDescription className="text-center">
-            Please sign in to continue
+          <CardDescription className="text-center text-slate-500 text-sm">
+            Sign in to access your dashboard and posts
           </CardDescription>
         </CardHeader>
-        <CardContent className="gap-6">
-          <View className="gap-6">
+        <CardContent className="gap-5">
+          <View className="gap-4">
             <View className="gap-1.5">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-slate-700 font-medium text-xs uppercase tracking-wider">
+                Email Address
+              </Label>
               <Input
                 id="email"
+                placeholder="student@university.edu"
                 keyboardType="email-address"
                 autoComplete="email"
                 autoCapitalize="none"
@@ -84,66 +98,77 @@ export function SignInForm() {
                 value={emailAddress}
                 onChangeText={setEmailAddress}
                 editable={!loading}
+                className="h-11 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white text-slate-800 px-3.5 text-sm"
               />
             </View>
             <View className="gap-1.5">
-              <View className="flex-row items-center">
-                <Label htmlFor="password">Password</Label>
+              <View className="flex-row items-center justify-between">
+                <Label htmlFor="password" className="text-slate-700 font-medium text-xs uppercase tracking-wider">
+                  Password
+                </Label>
                 <Button
                   variant="link"
                   size="sm"
-                  className="web:h-fit ml-auto h-4 px-1 py-0 sm:h-4"
+                  className="web:h-fit px-1 py-0 h-4"
                   onPress={() => {
                     // TODO: Navigate to forgot password screen
                   }}
                 >
-                  <Text className="font-normal leading-4 text-blue-600">
-                    Forgot your password?
+                  <Text className="text-xs font-semibold text-blue-600 hover:text-blue-700">
+                    Forgot password?
                   </Text>
                 </Button>
               </View>
               <Input
                 ref={passwordInputRef}
                 id="password"
+                placeholder="••••••••"
                 secureTextEntry
                 returnKeyType="send"
                 onSubmitEditing={onSubmit}
                 value={password}
                 onChangeText={setPassword}
                 editable={!loading}
+                className="h-11 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white text-slate-800 px-3.5 text-sm"
               />
             </View>
             <Button
               variant="default"
-              className="w-full bg-blue-600 text-white hover:bg-blue-700"
+              className="w-full h-11 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-xl shadow-md shadow-blue-600/20 mt-1"
               onPress={onSubmit}
               disabled={loading || !isLoaded}
             >
-              <Text className="text-white">
-                {loading ? "Loading..." : "Continue"}
+              <Text className="text-white font-semibold text-base">
+                {loading ? "Signing in..." : "Sign In"}
               </Text>
             </Button>
           </View>
-          <Text className="text-center text-sm">
-            Don&apos;t have an account?{" "}
-            <Pressable
-              onPress={() => {
-                router.push("/sign-up");
-              }}
-            >
-              <Text className="text-sm text-blue-600 underline underline-offset-4">
-                Sign up
-              </Text>
-            </Pressable>
-          </Text>
-          <View className="flex-row items-center">
-            <Separator className="flex-1" />
-            <Text className="text-muted-foreground px-4 text-sm">or</Text>
-            <Separator className="flex-1" />
+
+          <View className="flex-row items-center my-1">
+            <Separator className="flex-1 bg-slate-200" />
+            <Text className="text-slate-400 px-3 text-xs uppercase font-medium">Or continue with</Text>
+            <Separator className="flex-1 bg-slate-200" />
           </View>
+
           <SocialConnections />
+
+          <View className="pt-2 items-center">
+            <Text className="text-center text-sm text-slate-600">
+              Don&apos;t have an account?{" "}
+              <Pressable
+                onPress={() => {
+                  router.push("/sign-up");
+                }}
+              >
+                <Text className="text-sm font-semibold text-blue-600 hover:underline">
+                  Sign up
+                </Text>
+              </Pressable>
+            </Text>
+          </View>
         </CardContent>
       </Card>
     </View>
   );
 }
+

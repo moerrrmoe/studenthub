@@ -50,8 +50,8 @@ const Home = () => {
               postId={item.id}
               postLikes={item.likes}
               postTitle={item.title}
-              postBody={item.content.text}
-              postImages={item.content.images}
+              postBody={typeof item.content === 'string' ? item.content : item.content?.text}
+              postImages={typeof item.content === 'object' ? item.content?.images : []}
               authorId={item.authorId}
               authorName={item.author.firstName + ' ' + item.author.lastName}
               authorAvatar="https://placehold.co/100x100"

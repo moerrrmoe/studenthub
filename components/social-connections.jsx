@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Image, Platform, View, Alert } from "react-native";
+import { Image, View, Alert } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import { useOAuth } from "@clerk/expo";
 import * as Linking from "expo-linking";
@@ -85,14 +85,12 @@ function SocialButton({ strategy }) {
     <Button
       variant="outline"
       size="sm"
-      className="sm:flex-1 bg-black border-black active:bg-zinc-900"
+      className="flex-1 bg-white border-slate-200 hover:bg-slate-50 active:bg-slate-100 h-11 rounded-xl shadow-xs justify-center items-center"
       onPress={onPress}
     >
       <Image
-        className={cn("size-4", strategy.useTint && "invert")}
-        tintColorClassName={Platform.select({
-          native: strategy.useTint ? "accent-white" : undefined,
-        })}
+        className={cn("size-5", strategy.useTint && "opacity-80")}
+        style={{ width: 20, height: 20, resizeMode: "contain" }}
         source={strategy.source}
       />
     </Button>

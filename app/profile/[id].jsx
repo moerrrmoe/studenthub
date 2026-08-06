@@ -193,8 +193,8 @@ const Profile = () => {
                             postLikes={post.likes}
                             postTitle={post.title}
                             authorId={post.authorId}
-                            postBody={post.content.text}
-                            postImages={post.content.images}
+                            postBody={typeof post.content === 'string' ? post.content : post.content?.text}
+                            postImages={typeof post.content === 'object' ? post.content?.images : []}
                             authorName={`${thisUser?.firstName} ${thisUser?.lastName}`}
                             authorAvatar={user?.imageUrl}
                             postComments={post.commentsCount}

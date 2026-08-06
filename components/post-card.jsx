@@ -5,9 +5,79 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { LayoutAnimation, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import Markdown from "@ronradtke/react-native-markdown-display";
 import ImageCarousel from "./image-carousel";
 import { Card, CardContent, CardFooter, CardHeader } from "./ui/card";
 
+
+const markdownStyles = {
+  body: {
+    color: "#374151",
+    fontSize: 14,
+    lineHeight: 22,
+  },
+  paragraph: {
+    marginTop: 0,
+    marginBottom: 6,
+  },
+  heading1: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#111827",
+    marginTop: 6,
+    marginBottom: 4,
+  },
+  heading2: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#1f2937",
+    marginTop: 6,
+    marginBottom: 4,
+  },
+  heading3: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#374151",
+    marginTop: 4,
+    marginBottom: 2,
+  },
+  link: {
+    color: "#2563eb",
+    textDecorationLine: "underline",
+  },
+  code_inline: {
+    backgroundColor: "#f3f4f6",
+    color: "#1f2937",
+    borderRadius: 4,
+    paddingHorizontal: 4,
+    fontFamily: "monospace",
+  },
+  code_block: {
+    backgroundColor: "#f8fafc",
+    borderColor: "#e2e8f0",
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 8,
+    marginVertical: 4,
+  },
+  fence: {
+    backgroundColor: "#f8fafc",
+    borderColor: "#e2e8f0",
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 8,
+    marginVertical: 4,
+  },
+  list_item: {
+    marginVertical: 2,
+  },
+  bullet_list: {
+    marginVertical: 4,
+  },
+  ordered_list: {
+    marginVertical: 4,
+  },
+};
 
 const PostCard = ({
   postId,
@@ -111,24 +181,49 @@ const PostCard = ({
     }
   };
 
+  const getRawBodyText = (body) => {
+    if (!body) return "";
+    if (typeof body === "string") {
+      if (body.startsWith("{") && body.includes('"text"')) {
+        try {
+          const parsed = JSON.parse(body);
+          return parsed.text || body;
+        } catch {
+          return body;
+        }
+      }
+      return body;
+    }
+    if (typeof body === "object" && body !== null) {
+      return body.text || body.content || "";
+    }
+    return String(body);
+  };
+
+  const rawBodyText = getRawBodyText(postBody);
+  const displayText = !isDetailView && rawBodyText.length > 180 && !isExpanded
+    ? `${rawBodyText.substring(0, 180)}...`
+    : rawBodyText;
+
   return (
-    <Card className="mt-3 mb-1 bg-white w-full border border-gray-200">
-      <CardHeader>
-        <View className="flex-row items-center gap-3">
-          <Image
-            source={authorAvatar}
-            className="w-[42px] h-[42px] rounded-full bg-gray-100"
-          />
-          <View className="flex flex-col flex-1">
-            <View className="flex flex-row items-center gap-2">
-              <Text className="text-sm font-semibold text-gray-900">{authorName}</Text>
-              <Text className="text-gray-300">·</Text>
-              {authorId !== user?.id && (
-                <Pressable><Text className="text-sm font-medium text-blue-600">Follow</Text></Pressable>
-              )}
+    <Card className="w-full bg-white border border-gray-200 rounded-xl mb-4 shadow-xs overflow-hidden">
+      <CardHeader className="pb-2">
+        <View className="flex-row items-center justify-between">
+          <Pressable
+            onPress={() => router.push(`/profile/${authorId}`)}
+            className="flex-row items-center gap-3 flex-1"
+          >
+            <Image
+              source={{ uri: authorAvatar }}
+              className="w-10 h-10 rounded-full bg-gray-100"
+            />
+            <View className="flex-1">
+              <Text className="text-sm font-semibold text-gray-900 leading-tight">
+                {authorName}
+              </Text>
+              <Text className="text-xs text-gray-400 mt-0.5">Post time</Text>
             </View>
-            <Text className="text-xs text-gray-400 mt-0.5">Post time</Text>
-          </View>
+          </Pressable>
           <Pressable className="p-1.5 rounded-full hover:bg-gray-100">
             <Ionicons name="ellipsis-horizontal" size={18} color="#9ca3af" />
           </Pressable>
@@ -138,20 +233,19 @@ const PostCard = ({
       <CardContent>
         <View className="mb-4">
           {postTitle ? <Text className="text-base font-semibold text-gray-900 mb-1.5">{postTitle}</Text> : null}
-          {postBody ? (
-            <Text className="text-sm text-gray-600 leading-5">
-              {!isDetailView && postBody.length > 180 && !isExpanded
-                ? `${postBody.substring(0, 180)}...`
-                : postBody}
-              {!isDetailView && postBody.length > 180 && (
-                <Text
-                  className="text-blue-600 font-semibold"
-                  onPress={() => setIsExpanded(!isExpanded)}
-                >
-                  {isExpanded ? " Show less" : " See more"}
-                </Text>
+          {rawBodyText ? (
+            <View className="gap-1">
+              <Markdown style={markdownStyles}>
+                {displayText}
+              </Markdown>
+              {!isDetailView && rawBodyText.length > 180 && (
+                <Pressable onPress={() => setIsExpanded(!isExpanded)} className="self-start">
+                  <Text className="text-blue-600 font-semibold text-sm">
+                    {isExpanded ? "Show less" : "See more"}
+                  </Text>
+                </Pressable>
               )}
-            </Text>
+            </View>
           ) : null}
         </View>
         {postImages && postImages.length > 0 ? (

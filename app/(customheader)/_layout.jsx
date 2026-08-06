@@ -14,6 +14,7 @@ export default function CustomHeaderLayout() {
             <Stack.Screen name="chat/[id]" options={{ headerShown: false }} />
             <Stack.Screen name="chat-list" options={{ headerShown: false }} />
             <Stack.Screen name="create-post" options={{ headerShown: false }} />
+            <Stack.Screen name="admin/dashboard" options={{ headerShown: false }} />
           </Stack>
         </View>
       </View>

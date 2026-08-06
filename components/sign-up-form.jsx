@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Text } from "@/components/ui/text";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import * as React from "react";
 import { Pressable, View, Alert } from "react-native";
 import { useSignUp } from "@clerk/expo/legacy";
@@ -95,26 +96,39 @@ export function SignUpForm() {
   }
 
   return (
-    <View className="gap-6 w-full max-w-[400px]">
-      <View className="items-center mb-1">
-        <Text className="text-3xl text-blue-600 font-bold tracking-tight">StudentHub</Text>
+    <View className="gap-6 w-full max-w-[440px] px-2 sm:px-0">
+      {/* Brand Header */}
+      <View className="items-center justify-center gap-2 mb-2">
+        <View className="w-14 h-14 rounded-2xl bg-blue-600 items-center justify-center shadow-lg shadow-blue-500/30">
+          <Ionicons name="school" size={30} color="#ffffff" />
+        </View>
+        <Text className="text-3xl text-slate-900 font-extrabold tracking-tight">
+          Student<Text className="text-blue-600">Hub</Text>
+        </Text>
+        <Text className="text-sm text-slate-500 font-medium text-center">
+          Join thousands of students learning & growing together
+        </Text>
       </View>
-      <Card className="border-border/0 sm:border-border shadow-none sm:shadow-sm sm:shadow-black/5">
-        <CardHeader>
-          <CardTitle className="text-center text-xl">
+
+      <Card className="bg-white/95 border-slate-200/80 rounded-2xl shadow-xl shadow-slate-200/50 p-2 sm:p-4">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-center text-xl font-bold text-slate-800">
             Create Account
           </CardTitle>
-          <CardDescription className="text-center">
-            Please sign up to continue
+          <CardDescription className="text-center text-slate-500 text-sm">
+            Fill in your details below to get started
           </CardDescription>
         </CardHeader>
-        <CardContent className="gap-6">
-          <View className="gap-6">
-            <View className="flex-row gap-4">
+        <CardContent className="gap-5">
+          <View className="gap-4">
+            <View className="flex-row gap-3">
               <View className="flex-1 gap-1.5">
-                <Label htmlFor="firstName">First Name</Label>
+                <Label htmlFor="firstName" className="text-slate-700 font-medium text-xs uppercase tracking-wider">
+                  First Name
+                </Label>
                 <Input
                   id="firstName"
+                  placeholder="John"
                   autoCapitalize="words"
                   onSubmitEditing={onFirstNameSubmitEditing}
                   returnKeyType="next"
@@ -122,13 +136,17 @@ export function SignUpForm() {
                   value={firstName}
                   onChangeText={setFirstName}
                   editable={!loading}
+                  className="h-11 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white text-slate-800 px-3.5 text-sm"
                 />
               </View>
               <View className="flex-1 gap-1.5">
-                <Label htmlFor="lastName">Last Name</Label>
+                <Label htmlFor="lastName" className="text-slate-700 font-medium text-xs uppercase tracking-wider">
+                  Last Name
+                </Label>
                 <Input
                   ref={lastNameInputRef}
                   id="lastName"
+                  placeholder="Doe"
                   autoCapitalize="words"
                   onSubmitEditing={onLastNameSubmitEditing}
                   returnKeyType="next"
@@ -136,14 +154,19 @@ export function SignUpForm() {
                   value={lastName}
                   onChangeText={setLastName}
                   editable={!loading}
+                  className="h-11 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white text-slate-800 px-3.5 text-sm"
                 />
               </View>
             </View>
+
             <View className="gap-1.5">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-slate-700 font-medium text-xs uppercase tracking-wider">
+                Email Address
+              </Label>
               <Input
                 ref={emailInputRef}
                 id="email"
+                placeholder="student@university.edu"
                 keyboardType="email-address"
                 autoComplete="email"
                 autoCapitalize="none"
@@ -153,53 +176,64 @@ export function SignUpForm() {
                 value={emailAddress}
                 onChangeText={setEmailAddress}
                 editable={!loading}
+                className="h-11 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white text-slate-800 px-3.5 text-sm"
               />
             </View>
+
             <View className="gap-1.5">
-              <View className="flex-row items-center">
-                <Label htmlFor="password">Password</Label>
-              </View>
+              <Label htmlFor="password" className="text-slate-700 font-medium text-xs uppercase tracking-wider">
+                Password
+              </Label>
               <Input
                 ref={passwordInputRef}
                 id="password"
+                placeholder="••••••••"
                 secureTextEntry
                 returnKeyType="send"
                 onSubmitEditing={onSubmit}
                 value={password}
                 onChangeText={setPassword}
                 editable={!loading}
+                className="h-11 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white text-slate-800 px-3.5 text-sm"
               />
             </View>
+
             <Button
-              className="w-full bg-blue-600 text-white hover:bg-blue-700"
+              className="w-full h-11 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-xl shadow-md shadow-blue-600/20 mt-1"
               onPress={onSubmit}
               disabled={loading || !isLoaded}
             >
-              <Text className="text-white">
-                {loading ? "Loading..." : "Continue"}
+              <Text className="text-white font-semibold text-base">
+                {loading ? "Creating Account..." : "Create Account"}
               </Text>
             </Button>
           </View>
-          <Text className="text-center text-sm">
-            Already have an account?{" "}
-            <Pressable
-              onPress={() => {
-                router.push("/");
-              }}
-            >
-              <Text className="text-sm text-blue-600 underline underline-offset-4">
-                Sign in
-              </Text>
-            </Pressable>
-          </Text>
-          <View className="flex-row items-center">
-            <Separator className="flex-1" />
-            <Text className="text-muted-foreground px-4 text-sm">or</Text>
-            <Separator className="flex-1" />
+
+          <View className="flex-row items-center my-1">
+            <Separator className="flex-1 bg-slate-200" />
+            <Text className="text-slate-400 px-3 text-xs uppercase font-medium">Or continue with</Text>
+            <Separator className="flex-1 bg-slate-200" />
           </View>
+
           <SocialConnections />
+
+          <View className="pt-2 items-center">
+            <Text className="text-center text-sm text-slate-600">
+              Already have an account?{" "}
+              <Pressable
+                onPress={() => {
+                  router.push("/");
+                }}
+              >
+                <Text className="text-sm font-semibold text-blue-600 hover:underline">
+                  Sign in
+                </Text>
+              </Pressable>
+            </Text>
+          </View>
         </CardContent>
       </Card>
     </View>
   );
 }
+

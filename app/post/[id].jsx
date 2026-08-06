@@ -93,8 +93,8 @@ const Post = () => {
                     postId={post.id}
                     postLikes={post.likes}
                     postTitle={post.title}
-                    postBody={post.content.text}
-                    postImages={post.content.images}
+                    postBody={typeof post.content === 'string' ? post.content : post.content?.text}
+                    postImages={typeof post.content === 'object' ? post.content?.images : []}
                     authorId={post.authorId}
                     authorName={post.author?.firstName + ' ' + post.author?.lastName}
                     authorAvatar={post.author?.avatarUrl}
