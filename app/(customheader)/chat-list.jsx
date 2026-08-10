@@ -1,12 +1,11 @@
 import { useAuth, useUser } from "@clerk/expo";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import axios from "axios";
-import { useRouter } from "expo-router";
+import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { FlatList, Image, Platform, Pressable, Text, View } from "react-native";
 
-const ChatList = ({ activeChatId, searchQuery = "" }) => {
-  const router = useRouter();
+const ChatList = ({ activeChatId, searchQuery = "", forceRefreshToken = null }) => {
   const [conversations, setConversations] = useState([]);
   const { user } = useUser();
   const { getToken } = useAuth();
@@ -34,6 +33,13 @@ const ChatList = ({ activeChatId, searchQuery = "" }) => {
       fetchConversations();
     }
   }, [user, searchQuery]);
+
+  useEffect(() => {
+    if (forceRefreshToken !== null) {
+      router.replace('/chat')
+
+    }
+  }, [forceRefreshToken]);
 
   // Debounced search
   useEffect(() => {
@@ -78,6 +84,9 @@ const ChatList = ({ activeChatId, searchQuery = "" }) => {
             source={{ uri: item.conversationImage || "https://placehold.co/150x150" }}
             className="w-10 h-10 rounded-full bg-gray-100"
           />
+          {
+            item?.type == "group" && <Ionicons name="people" className="text-gray-400 absolute -bottom-1 -right-1" size={18} />
+          }
         </View>
 
         {/* Message Content */}
@@ -178,6 +187,8 @@ const ChatList = ({ activeChatId, searchQuery = "" }) => {
           </View>
         }
       />
+
+
     </View>
   );
 };

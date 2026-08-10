@@ -192,7 +192,7 @@ const Dashboard = () => {
                 const res = await axios.post("http://localhost:8080/feed/integration", {
                     providerId: modalIntegrationProvider.value,
                     userId: String(modalIntegrationUser.value),
-                    tag: String(modalIntegrationTag)
+                    tag: String(modalIntegrationTag) || null
                 })
 
                 if (res.data.success) {

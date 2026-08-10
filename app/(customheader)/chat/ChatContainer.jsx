@@ -3,17 +3,20 @@ import { useAuth, useUser } from "@clerk/expo";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import axios from "axios";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
+  Button,
   FlatList,
   Image,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   Text,
   TextInput,
   View
 } from "react-native";
+import FloatingActionButton from "../../../components/floating-action-button";
 import ChatList from "../chat-list";
 import AiChat from "./ai-chat";
 
@@ -23,6 +26,16 @@ const ChatContainer = ({ chatId }) => {
   const { user } = useUser();
   const [message, setMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isChatCreateModalVisible, setIsChatCreateModalVisible] = useState(false);
+  const [chatCreateModalChatName, setChatCreateModalChatName] = useState("");
+  const [chatLeaveModalVisible, setChatLeaveModalVisible] = useState(false);
+  const [chatInviteModalVisible, setChatInviteModalVisible] = useState(false);
+  const [chatType, setChatType] = useState("personal")
+  const chatListRef = useRef();
+  const [refreshToken, setRefreshToken] = useState(null);
+  const [isMenuVisible, setIsMenuVisible] = useState(false);
+  const [uninvitedFollowers, setUninvitedFollowers] = useState([]);
+  const [selectedUninvitedFollowers, setSelectedUninvitedFollowers] = useState([]);
 
   const isChatSelected = !!chatId;
   const chatName = "Study Group";
@@ -45,14 +58,39 @@ const ChatContainer = ({ chatId }) => {
     });
     console.log(response.data)
     if (response.data.success) {
+      setChatType(response.data.data.type)
       setMessages((prev) => (response.data.data.messages.reverse()));
     }
   };
+
+  const getUninvitedFollowers = async () => {
+    if (!chatId) return setUninvitedFollowers([]);
+    if (chatId == 'ai') return setUninvitedFollowers([]);
+    try {
+      const token = await getToken();
+      const response = await axios.get(`http://localhost:8080/chat/${chatId}/uninvited-followers`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        data: {
+          userId: user?.id
+        }
+      });
+      console.log(response.data)
+      if (response.data.success) {
+        setUninvitedFollowers(response.data.data)
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
 
   useEffect(() => {
     if (!chatId) return;
     if (chatId === "ai") return;
     fetchMessages();
+
 
     // Socket Room Management
     socket.connect();
@@ -72,6 +110,12 @@ const ChatContainer = ({ chatId }) => {
     };
   }, [chatId]);
 
+  useEffect(() => {
+    if (chatType === "group") {
+      getUninvitedFollowers();
+    }
+  }, [chatType, chatId])
+
   const sendMessage = () => {
     if (!message.trim() || !chatId) return;
 
@@ -84,27 +128,118 @@ const ChatContainer = ({ chatId }) => {
     setMessage("");
   };
 
+  const createGroupChat = async () => {
+    try {
+      const token = await getToken();
+      const res = await axios.post('http://localhost:8080/chat/group', {
+        name: chatCreateModalChatName,
+        members: [user?.id]
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+      if (res.data.success) {
+        setRefreshToken(Date.now())
+        setIsChatCreateModalVisible(false);
+        setChatCreateModalChatName("");
+      }
+    } catch (error) {
+      console.log(error)
+    }
+
+  }
+
+  const leaveChat = async () => {
+    try {
+      const token = await getToken();
+      const res = await axios.delete(`http://localhost:8080/chat/leave/${chatId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        data: {
+          targetUserId: user?.id
+        }
+      })
+      if (res.data.success) {
+        setRefreshToken(Date.now())
+        router.back();
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  }
+  const toggleFollowerSelection = (followerId) => {
+    setSelectedUninvitedFollowers((prev) => {
+      if (prev.includes(followerId)) {
+        return prev.filter((id) => id !== followerId);
+      } else {
+        return [...prev, followerId];
+      }
+    });
+  };
+
+  const inviteFollowers = async () => {
+    if (selectedUninvitedFollowers.length === 0) return;
+    try {
+      const token = await getToken();
+      await Promise.all(
+        selectedUninvitedFollowers.map((followerId) =>
+          axios.post(
+            "http://localhost:8080/chat/member",
+            {
+              chatId: chatId,
+              userId: followerId,
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          )
+        )
+      );
+      setChatInviteModalVisible(false);
+      setSelectedUninvitedFollowers([]);
+      setRefreshToken(Date.now());
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+
+
   const renderMessages = ({ item }) => {
     const isMe = item.senderId === user?.id;
 
     return (
       <View
-        className={`max-w-[75%] rounded-2xl px-4 py-2.5 my-1 ${isMe
-          ? "bg-blue-600 rounded-tr-sm ml-auto mr-3"
-          : "bg-white border border-gray-100 rounded-tl-sm ml-3 mr-auto"
+        className={`max-w-[80%] flex-row ${isMe
+          ? "ml-auto mr-1"
+          : "ml-1 mr-auto"
           }`}
       >
-        <Text className={`text-sm leading-5 ${isMe ? "text-white" : "text-gray-800"}`}>
-          {item.content}
-        </Text>
-        <Text
-          className={`text-[10px] mt-1 self-end ${isMe ? "text-blue-200" : "text-gray-400"}`}
-        >
-          {new Date(item.createdAt).toLocaleTimeString()}
-        </Text>
+        {!isMe && chatType == 'group' && (
+          <Image className={"w-8 h-8 mr-2 rounded-full shrink-0"} source={{ uri: "https://placehold.co/150x150" }} />
+        )}
+        <View className={`rounded-2xl px-4 py-2.5 my-1 shrink ${isMe ? "bg-blue-600 rounded-tr-sm" : "bg-white border border-gray-100 rounded-tl-sm"}`}>
+          <Text className={`text-sm leading-5 ${isMe ? "text-white" : "text-gray-800"}`}>
+            {item.content}
+          </Text>
+          <Text
+            className={`text-[10px] mt-1 self-end ${isMe ? "text-blue-200" : "text-gray-400"}`}
+          >
+            {new Date(item.createdAt).toLocaleTimeString()}
+          </Text>
+
+        </View>
+        {isMe && chatType == 'group' && (
+          <Image source={{ uri: "https://placehold.co/150x150" }} className="w-8 h-8 ml-2 rounded-full shrink-0" />
+        )}
       </View>
     );
   };
+
 
   return (
     <KeyboardAvoidingView
@@ -133,8 +268,67 @@ const ChatContainer = ({ chatId }) => {
             />
           </View>
         </View>
-        <ChatList activeChatId={chatId} searchQuery={searchQuery} />
+        <ChatList forceRefreshToken={refreshToken} activeChatId={chatId} searchQuery={searchQuery} />
+        <FloatingActionButton onPress={() => setIsChatCreateModalVisible(true)} icon={<Ionicons name="create-outline" size={18} color="white" />} />
       </View>
+
+
+      {/*Chat Create Modal*/}
+
+      <Modal visible={isChatCreateModalVisible} transparent animationType="fade">
+        <View className="flex-1 items-center justify-center bg-black/50">
+          <View className="bg-white p-5 rounded-lg shadow-lg gap-3">
+            <Text className="text-lg font-semibold">Create Group Chat</Text>
+            <View className="border border-gray-200 rounded-lg h-10 p-2">
+              <TextInput value={chatCreateModalChatName} onChangeText={(text) => setChatCreateModalChatName(text)} placeholderTextColor={"#9ca3af"} placeholder='Chat Name' />
+            </View>
+
+            <Button title='Create Chat' onPress={() => createGroupChat()} />
+            <Button color="#f05757ff" title='Cancel' onPress={() => setIsChatCreateModalVisible(false)} />
+          </View>
+        </View>
+      </Modal>
+
+      {/*Followers Invite Modal*/}
+
+      <Modal transparent visible={chatInviteModalVisible}>
+        <View className="flex-1 bg-black/50 justify-center items-center">
+          <View className="bg-white p-3 gap-2 rounded-lg">
+            <Text className="text-lg font-semibold mb-2 self-center">Invite Your Followers</Text>
+            <FlatList
+              data={uninvitedFollowers}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => {
+                const isSelected = selectedUninvitedFollowers.includes(item.id);
+                return (
+                  <Pressable
+                    onPress={() => toggleFollowerSelection(item.id)}
+                    className="flex-row gap-2 items-center border-b border-gray-200 p-2 min-w-[200px]"
+                  >
+                    <Image source={{ uri: "https://placehold.co/150x150" }} className="w-8 h-8 rounded-full" />
+                    <Text className="text-[15px]">{item.firstName + " " + item.lastName}</Text>
+                    <Ionicons
+                      className="ml-auto"
+                      size={15}
+                      name={isSelected ? "checkbox" : "square-outline"}
+                      color={isSelected ? "#2563eb" : "gray"}
+                    />
+                  </Pressable>
+                );
+              }}
+              ListEmptyComponent={() => (
+                <View className="flex-1 items-center justify-center">
+                  <Text className="text-gray-500">No followers to invite</Text>
+                </View>
+              )}
+            />
+            <View className="flex-row justify-end gap-3 mt-4">
+              <Button color="#f05757ff" title='Cancel' onPress={() => { setChatInviteModalVisible(false); setSelectedUninvitedFollowers([]); }} />
+              <Button title='Invite' onPress={() => inviteFollowers()} />
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* 
         MAIN CHAT AREA 
@@ -169,7 +363,7 @@ const ChatContainer = ({ chatId }) => {
                 </View>
               </View>
 
-              <Pressable className="p-2 rounded-full hover:bg-gray-100">
+              <Pressable onPress={() => setIsMenuVisible(true)} className="p-2 rounded-full hover:bg-gray-100">
                 <Ionicons name="ellipsis-vertical" size={18} color="#9ca3af" />
               </Pressable>
             </View>
@@ -178,7 +372,7 @@ const ChatContainer = ({ chatId }) => {
             <FlatList
               showsVerticalScrollIndicator={false}
               inverted
-              className="flex-1 px-2"
+              className="flex-1 px-1"
               contentContainerStyle={{ paddingVertical: 16 }}
               renderItem={renderMessages}
               data={messages}
@@ -226,6 +420,61 @@ const ChatContainer = ({ chatId }) => {
           </View>
         )}
       </View>
+
+      <Modal transparent visible={isMenuVisible} onRequestClose={() => setIsMenuVisible(false)}>
+        <Pressable className="flex-1 bg-black/50 justify-center items-center" onPress={() => setIsMenuVisible(false)}>
+          <Pressable className="flex-col bg-white p-5 rounded-lg shadow-lg gap-2" onPress={(e) => e.stopPropagation()}>
+            {
+              chatType == "private" &&
+              <Pressable className="flex-row items-center gap-2 border-b border-gray-100 pb-2">
+                <Ionicons name="ban-outline" size={16} color={"#ef4444"} />
+                <Text className="text-lg text-[#ef4444]">Block This Person</Text>
+              </Pressable>
+            }
+            {
+              chatType == "group" &&
+              <Pressable onPress={() => { setIsMenuVisible(false); setChatInviteModalVisible(true); }} className="flex-row border-b border-gray-100 pb-2 items-center gap-2">
+                <Ionicons name="person-add-outline" size={16} color={"gray"} />
+                <Text className="text-lg text-gray-400">Add Member</Text>
+              </Pressable>
+            }
+            {
+              chatType == "group" &&
+              <Pressable onPress={() => { setIsMenuVisible(false); setChatLeaveModalVisible(true) }} className="flex-row items-center gap-2">
+                <Ionicons name="person-remove-outline" size={16} color={"#ef4444"} />
+                <Text className="text-lg text-[#ef4444]">Leave Group</Text>
+              </Pressable>
+            }
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      <Modal visible={false}>
+        <View className="flex-1 items-center justify-center bg-black/50">
+          <View className="bg-white p-5 rounded-lg shadow-lg">
+            <Text className="text-lg font-semibold">Block User</Text>
+            <Text>Are you sure you want to block this user?</Text>
+            <View className="flex-row justify-end gap-2">
+              <Button title="Cancel" onPress={() => { }} />
+              <Button title="Block" onPress={() => { }} />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={chatLeaveModalVisible} transparent onRequestClose={() => setChatLeaveModalVisible(false)}>
+        <Pressable className="flex-1 items-center justify-center bg-black/50" onPress={() => setChatLeaveModalVisible(false)}>
+          <Pressable className="bg-white p-5 rounded-lg shadow-lg" onPress={(e) => e.stopPropagation()}>
+            <Text className="text-lg font-semibold">Leave Group</Text>
+            <Text className="text-gray-600">Are you sure you want to leave this group?</Text>
+            <View className="flex-row justify-end gap-2 mt-3">
+              <Button title="Cancel" onPress={() => setChatLeaveModalVisible(false)} />
+              <Button title="Leave" color={"#ef4444"} onPress={() => { leaveChat() }} />
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
     </KeyboardAvoidingView>
   );
 };

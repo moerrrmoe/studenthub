@@ -1,11 +1,11 @@
 import { useUser } from "@clerk/expo";
 import { FontAwesome, FontAwesome5, Ionicons } from "@expo/vector-icons";
+import Markdown from "@ronradtke/react-native-markdown-display";
 import axios from "axios";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { LayoutAnimation, Pressable, ScrollView, Text, TextInput, View } from "react-native";
-import Markdown from "@ronradtke/react-native-markdown-display";
 import ImageCarousel from "./image-carousel";
 import { Card, CardContent, CardFooter, CardHeader } from "./ui/card";
 
@@ -206,7 +206,7 @@ const PostCard = ({
     : rawBodyText;
 
   return (
-    <Card className="w-full bg-white border border-gray-200 rounded-xl mb-4 shadow-xs overflow-hidden">
+    <Card className="w-full bg-white border border-gray-200 rounded-xl my-2 shadow-xs overflow-hidden">
       <CardHeader className="pb-2">
         <View className="flex-row items-center justify-between">
           <Pressable
