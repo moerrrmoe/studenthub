@@ -33,8 +33,8 @@ const NAV_ITEMS = [
     label: "Library",
     icon: "book-outline",
     activeIcon: "book",
-    route: null,
-    match: () => false,
+    route: "/study-space",
+    match: (p) => p.includes("study-space") || p.includes("book"),
   },
   {
     key: "profile",

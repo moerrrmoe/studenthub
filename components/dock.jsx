@@ -19,7 +19,7 @@ const Dock = () => {
     { key: "home", icon: "home-outline", activeIcon: "home", route: "/home", match: (p) => p === "home" },
     { key: "chat", icon: "chatbubble-outline", activeIcon: "chatbubble", route: "/chat", match: (p) => p.startsWith("chat") },
     { key: "create", icon: "add-circle", activeIcon: "add-circle", route: "/create-post", match: () => false, isCreate: true },
-    { key: "library", icon: "book-outline", activeIcon: "book", route: null, match: () => false },
+    { key: "library", icon: "book-outline", activeIcon: "book", route: "/study-space", match: (p) => p.includes("study-space") || p.includes("book") },
     { key: "profile", icon: "person-outline", activeIcon: "person", route: "/profile/me", match: (p) => p.includes("profile/me") },
   ];
 

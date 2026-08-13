@@ -1,9 +1,10 @@
 import { useAuth } from '@clerk/expo'
 import { Ionicons } from '@expo/vector-icons'
 import axios from 'axios'
+import * as DocumentPicker from 'expo-document-picker'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native'
+import { Button, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 
 const Collection = () => {
     const router = useRouter()
@@ -12,6 +13,10 @@ const Collection = () => {
     const [collection, setCollection] = useState(null)
     const [isNotFound, setIsNotFound] = useState(false)
     const { getToken } = useAuth();
+    const [uploadModalVisible, setUploadModalVisible] = useState(false)
+    const [uploadModalTempUrl, setUploadModalTempUrl] = useState(null)
+    const [uploadModalName, setUploadModalName] = useState('')
+    const [uploadModalAuthor, setUploadModalAuthor] = useState('')
 
     const mockBooks = [
         {
@@ -50,6 +55,69 @@ const Collection = () => {
         book.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         book.author.toLowerCase().includes(searchQuery.toLowerCase())
     )
+
+    const pickBook = async () => {
+        try {
+            const result = await DocumentPicker.getDocumentAsync({
+                type: 'application/pdf',
+                copyToCacheDirectory: false,
+                multiple: false,
+            })
+            if (!result.canceled) {
+                return uploadBookAsTemp(result.assets[0])
+            }
+        } catch (error) {
+            console.error("Error picking book:", error)
+        }
+    }
+
+    const uploadBookAsTemp = async (asset) => {
+        try {
+            const token = await getToken();
+            const formData = new FormData();
+            const uriPart = asset.uri.split('/');
+            const filename = uriPart[uriPart.length - 1];
+            if (asset.file) {
+                formData.append("book", asset.file);
+            } else {
+                formData.append("book", {
+                    uri: asset.uri,
+                    name: filename,
+                    type: asset.mimeType
+                })
+            }
+            const res = await axios.post(`http://localhost:8080/book/temp/upload?collectionId=${collection_id}`, formData, { headers: { Authorization: token } })
+            if (res.data.success) {
+                return setUploadModalTempUrl(res.data.data.path)
+            }
+            return console.error("Error uploading book as temp:", res.data.message)
+        } catch (error) {
+            console.error("Error uploading book as temp:", error)
+        }
+    }
+
+    const uploadBook = async () => {
+        try {
+            const token = await getToken();
+            const res = await axios.post(`http://localhost:8080/book`, {
+                name: uploadModalName,
+                author: uploadModalAuthor,
+                tempPath: uploadModalTempUrl,
+                collectionId: parseInt(collection_id)
+            }, { headers: { Authorization: token } })
+            if (res.data.success) {
+                setUploadModalVisible(false)
+                setUploadModalName("")
+                setUploadModalAuthor("")
+                setUploadModalTempUrl(null)
+                return setCollection({ ...collection, books: [...collection.books, res.data.data] })
+            }
+            return console.error("Error uploading book:", res.data.message)
+        }
+        catch (error) {
+            console.error("Error uploading book:", error)
+        }
+    }
 
     useEffect(() => {
         const fetchCollection = async () => {
@@ -100,7 +168,7 @@ const Collection = () => {
                         <Text className='text-xs text-gray-500 mt-0.5'>Manage resources and books</Text>
                     </View>
                 </View>
-                <Pressable className='bg-blue-600 flex-row items-center gap-2 px-4 py-2.5 rounded-full shadow-sm hover:bg-blue-700 active:scale-95 transition-all'>
+                <Pressable onPress={() => setUploadModalVisible(true)} className='bg-blue-600 flex-row items-center gap-2 px-4 py-2.5 rounded-full shadow-sm hover:bg-blue-700 active:scale-95 transition-all'>
                     <Ionicons name="cloud-upload" size={20} color="white" />
                     <Text className='text-white font-semibold text-sm'>Upload Book</Text>
                 </Pressable>
@@ -130,6 +198,7 @@ const Collection = () => {
                 <View className='flex-row flex-wrap gap-4'>
                     {filteredBooks?.map((item) => (
                         <Pressable
+                            onPress={() => router.push(`/study-space/book/${item.id}?pdfUrl=${encodeURIComponent(`http://localhost:8080/${item.fileLocation}`)}`)}
                             key={item.id}
                             className="bg-white p-4 w-[47%] lg:w-[19%] rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden active:scale-[0.98] transition-all"
                         >
@@ -163,6 +232,40 @@ const Collection = () => {
                     )}
                 </View>
             </View>
+            {/* Upload Book Modal */}
+            <Modal visible={uploadModalVisible} transparent animationType="fade" onRequestClose={() => setUploadModalVisible(false)}>
+                <View className='flex-1 justify-center items-center bg-black/50'>
+                    <View className='p-5 max-w-[300px] bg-white rounded-2xl gap-2'>
+                        <Text className='text-lg font-bold'>Upload New Book</Text>
+                        <View className='p-2 border-1 border-gray-200 rounded-xl'>
+
+                            <TextInput placeholderTextColor='gray' placeholder='name' value={uploadModalName} onChangeText={setUploadModalName} />
+                        </View>
+                        <View className='p-2 border-1 border-gray-200 rounded-xl'>
+
+                            <TextInput placeholderTextColor='gray' placeholder='author' value={uploadModalAuthor} onChangeText={setUploadModalAuthor} />
+                        </View>
+                        <View>
+                            {
+                                uploadModalTempUrl == null ? (
+                                    <Pressable onPress={() => pickBook()} className='w-full flex-row rounded-xl bg-blue-400 p-2 items-center gap-2'>
+                                        <Ionicons size={25} color='white' name='cloud-upload' />
+                                        <Text className='text-md text-white text-center items-center justify-center'>Upload PDF</Text>
+                                    </Pressable>
+                                ) :
+                                    <View className='flex-row justify-between items-center p-2 border-1 border-gray-200 rounded-xl'>
+                                        <Text className='text-md text-black text-center flex-1' numberOfLines={1} ellipsizeMode='tail'>{uploadModalTempUrl.split('/').pop()}</Text>
+                                        <Pressable onPress={() => { setUploadModalTempUrl(null) }}><Ionicons size={25} color='red' name='close-circle' /></Pressable>
+                                    </View>
+                            }
+                        </View>
+                        <View className='flex-row justify-end gap-2 mt-4'>
+                            <Button title='Cancel' onPress={() => { setUploadModalVisible(false) }} color="red" />
+                            <Button onPress={() => { uploadBook() }} title='Upload' />
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </ScrollView>
     )
 }

@@ -150,25 +150,68 @@
         #page-indicator {
             display: flex;
             align-items: center;
-            gap: 6px;
-            padding: 7px 14px;
+            gap: 5px;
+            padding: 4px 10px;
             background: var(--bg-primary);
             border: 1px solid var(--border);
             border-radius: var(--radius-sm);
             font-size: 13px;
             font-weight: 500;
             color: var(--text-secondary);
-            min-width: 90px;
+            min-width: 96px;
             justify-content: center;
         }
 
-        #pageNum {
-            color: var(--text-primary);
+        #pageInput {
+            width: 44px;
+            height: 26px;
+            padding: 2px 4px;
+            text-align: center;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 13px;
             font-weight: 700;
+            color: var(--text-primary);
+            outline: none;
+            transition: border-color var(--transition), box-shadow var(--transition);
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+
+        #pageInput::-webkit-outer-spin-button,
+        #pageInput::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        #pageInput:hover:not(:disabled) {
+            border-color: var(--border-hover);
+        }
+
+        #pageInput:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent-glow);
+        }
+
+        #pageInput:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: transparent;
+            border-color: transparent;
+        }
+
+        .page-divider {
+            color: var(--text-muted);
+            font-size: 13px;
+            user-select: none;
         }
 
         #pageCount {
             color: var(--text-muted);
+            font-weight: 500;
+            user-select: none;
         }
 
         /* ── PDF Viewport ── */
@@ -355,7 +398,6 @@
 
         <header id="topbar">
             <a class="brand" href="#" aria-label="StudentHub">
-                <div class="brand-icon">📚</div>
                 <span class="brand-name">StudentHub</span>
             </a>
 
@@ -368,9 +410,9 @@
                     Prev
                 </button>
 
-                <div id="page-indicator" aria-live="polite">
-                    <span id="pageNum">—</span>
-                    <span style="color:var(--text-muted);">/</span>
+                <div id="page-indicator" aria-label="Page navigation">
+                    <input type="number" id="pageInput" min="1" value="1" disabled aria-label="Current page number" />
+                    <span class="page-divider">/</span>
                     <span id="pageCount">—</span>
                 </div>
 
@@ -381,10 +423,6 @@
                         <polyline points="9 18 15 12 9 6" />
                     </svg>
                 </button>
-            </div>
-
-            <div class="kbd-hint">
-                <kbd>←</kbd><kbd>→</kbd> to navigate
             </div>
         </header>
 
@@ -417,7 +455,7 @@
         const prevButton = document.getElementById('prevButton');
         const nextButton = document.getElementById('nextButton');
         const pdfContainer = document.getElementById('pdfContainer');
-        const pageNumEl = document.getElementById('pageNum');
+        const pageInput = document.getElementById('pageInput');
         const pageCountEl = document.getElementById('pageCount');
         const loadingState = document.getElementById('loading-state');
         const errorState = document.getElementById('error-state');
@@ -440,21 +478,54 @@
             nextButton.disabled = !pdfDoc || currentPage >= pdfDoc.numPages;
         }
 
+        function goToPage(pageNum) {
+            if (!pdfDoc || rendering) return;
+            const target = Math.max(1, Math.min(pdfDoc.numPages, pageNum));
+            if (target !== currentPage) {
+                currentPage = target;
+                renderPage(currentPage);
+            } else {
+                pageInput.value = currentPage;
+            }
+        }
+
+        function handleInputSubmit() {
+            const val = parseInt(pageInput.value, 10);
+            if (!isNaN(val)) {
+                goToPage(val);
+            } else {
+                pageInput.value = currentPage;
+            }
+        }
+
+        pageInput.addEventListener('change', handleInputSubmit);
+        pageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                handleInputSubmit();
+                pageInput.blur();
+            } else if (e.key === 'Escape') {
+                pageInput.value = currentPage;
+                pageInput.blur();
+            }
+        });
+        pageInput.addEventListener('focus', () => {
+            pageInput.select();
+        });
+
         prevButton.addEventListener('click', () => {
             if (currentPage > 1 && !rendering) {
-                currentPage--;
-                renderPage(currentPage);
+                goToPage(currentPage - 1);
             }
         });
 
         nextButton.addEventListener('click', () => {
             if (pdfDoc && currentPage < pdfDoc.numPages && !rendering) {
-                currentPage++;
-                renderPage(currentPage);
+                goToPage(currentPage + 1);
             }
         });
 
         document.addEventListener('keydown', (e) => {
+            if (document.activeElement === pageInput) return;
             if (e.key === 'ArrowLeft') prevButton.click();
             if (e.key === 'ArrowRight') nextButton.click();
         });
@@ -470,7 +541,9 @@
 
             pdfjsLib.getDocument(pdfUrl).promise.then(doc => {
                 pdfDoc = doc;
-                pageNumEl.textContent = currentPage;
+                pageInput.value = currentPage;
+                pageInput.max = pdfDoc.numPages;
+                pageInput.disabled = false;
                 pageCountEl.textContent = pdfDoc.numPages;
                 setLoading(false);
                 updateButtons();
@@ -501,7 +574,7 @@
 
                 page.render({ canvasContext: ctx, viewport }).promise.then(() => {
                     rendering = false;
-                    pageNumEl.textContent = num;
+                    pageInput.value = num;
                     updateButtons();
                 });
             });
