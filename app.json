@@ -40,7 +40,8 @@
           }
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      "./plugins/withExcludeDuplicateMetaInf"
     ],
     "experiments": {
       "typedRoutes": true,
