@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons'
 import axios from 'axios'
 import { useEffect, useState } from 'react'
-import { Alert, FlatList, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
+import { Alert, FlatList, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, ActivityIndicator } from 'react-native'
+import * as DocumentPicker from "expo-document-picker";
+import { Image } from 'expo-image';
 
 // Lightweight custom Select — uses Modal to avoid all zIndex issues on web & native
 const AppSelect = ({ items, placeholder, value, onValueChange }) => {
@@ -79,6 +81,49 @@ const Dashboard = () => {
     const [selectedUser, setSelectedUser] = useState(null)
     const [modalFirstName, setModalFirstName] = useState('')
     const [modalLastName, setModalLastName] = useState('')
+    const [modalBio, setModalBio] = useState('')
+    const [modalAvatar, setModalAvatar] = useState(null)
+
+    const getAvatarUrl = (avatar) => {
+        if (!avatar) return null;
+        if (avatar.startsWith("http")) return avatar;
+        const cleanPath = avatar.startsWith("/") ? avatar : `/${avatar}`;
+        return `http://localhost:8080${cleanPath}`;
+    };
+
+    const pickImage = async () => {
+        const result = await DocumentPicker.getDocumentAsync({
+            type: "image/*",
+        });
+
+        if (!result.canceled) {
+            uploadImageAsTemp(result.assets[0]);
+        }
+    };
+
+    const uploadImageAsTemp = async (asset) => {
+        const formData = new FormData();
+        const uriPart = asset.uri.split("/");
+        const filename = uriPart[uriPart.length - 1];
+
+        if (asset.file) {
+            formData.append("images", asset.file);
+        } else {
+            formData.append("images", {
+                uri: asset.uri,
+                name: filename,
+                type: asset.mimeType,
+            });
+        }
+        try {
+            const res = await axios.post("http://localhost:8080/image/temp/upload", formData);
+            if (res.data?.success) {
+                setModalAvatar(res.data.data.files[0].path);
+            }
+        } catch (err) {
+            console.log("Uploading Image failed", err);
+        }
+    };
 
     const mockFeedIntegrations = [
         { id: 1, provider: { name: "Provider 1" }, user: { name: "User 1" } },
@@ -136,9 +181,13 @@ const Dashboard = () => {
         if (selectedUser) {
             setModalFirstName(selectedUser.firstName || selectedUser.name || '')
             setModalLastName(selectedUser.lastName || '')
+            setModalBio(selectedUser.profile?.bio || '')
+            setModalAvatar(selectedUser.profile?.avatar || null)
         } else {
             setModalFirstName('')
             setModalLastName('')
+            setModalBio('')
+            setModalAvatar(null)
         }
     }, [selectedUser])
 
@@ -227,6 +276,12 @@ const Dashboard = () => {
 
     const handleStartTask = async (id) => {
         try {
+            setFeedIntegrations(prev => prev.map(item => {
+                if (item.id === id) {
+                    return { ...item, taskStatus: 'initializing' }
+                }
+                return item
+            }))
             const res = await axios.post(`http://localhost:8080/feed/integration/${id}/start`)
             if (res.data.success) {
                 setFeedIntegrations(prev => prev.map(item => {
@@ -235,9 +290,22 @@ const Dashboard = () => {
                     }
                     return item
                 }))
+            } else {
+                setFeedIntegrations(prev => prev.map(item => {
+                    if (item.id === id) {
+                        return { ...item, isScheduled: false, taskStatus: 'stopped' }
+                    }
+                    return item
+                }))
             }
         } catch (err) {
             console.log(err)
+            setFeedIntegrations(prev => prev.map(item => {
+                if (item.id === id) {
+                    return { ...item, isScheduled: false, taskStatus: 'stopped' }
+                }
+                return item
+            }))
         }
     }
 
@@ -398,7 +466,9 @@ const Dashboard = () => {
                     email: String(modalFirstName + modalLastName).toLowerCase().replace(/\s+/g, '') + "@studenthub.com",
                     firstName: modalFirstName,
                     lastName: modalLastName,
-                    role: 'automated'
+                    role: 'automated',
+                    ...(modalBio && { bio: modalBio }),
+                    ...(modalAvatar && { avatar: modalAvatar })
                 })
                 if (res.data.success) {
                     setAutomatedUsers(prev => [...prev, res.data.data])
@@ -410,7 +480,9 @@ const Dashboard = () => {
             try {
                 const res = await axios.put(`http://localhost:8080/user/${selectedUser.id}`, {
                     firstName: modalFirstName,
-                    lastName: modalLastName
+                    lastName: modalLastName,
+                    bio: modalBio,
+                    avatar: modalAvatar
                 })
                 if (res.data.success) {
                     setAutomatedUsers(prev => prev.map(item =>
@@ -418,7 +490,15 @@ const Dashboard = () => {
                     ))
                     setFeedIntegrations(prev => prev.map(f =>
                         f.userId === selectedUser.id || f.user?.id === selectedUser.id
-                            ? { ...f, user: { ...f.user, firstName: res.data.data.firstName, lastName: res.data.data.lastName } }
+                            ? { 
+                                ...f, 
+                                user: { 
+                                    ...f.user, 
+                                    firstName: res.data.data.firstName, 
+                                    lastName: res.data.data.lastName,
+                                    profile: res.data.data.profile
+                                } 
+                              }
                             : f
                     ))
                 }
@@ -512,16 +592,22 @@ const Dashboard = () => {
                                         <Text className='text-xs font-medium text-slate-700'>Edit</Text>
                                     </Pressable>
                                     {
-                                        feedIntegration?.taskStatus === 'scheduled' ? (
+                                        feedIntegration?.taskStatus === 'initializing' ? (
+                                            <View className='h-8 px-3 rounded-lg border border-slate-200 bg-slate-50 items-center justify-center flex-row gap-1'>
+                                                <ActivityIndicator size='small' color='#64748b' />
+                                                <Text className='text-xs text-slate-500 font-medium'>Starting...</Text>
+                                            </View>
+                                        ) : feedIntegration?.taskStatus === 'scheduled' ? (
                                             <Pressable onPress={() => handleStopTask(feedIntegration.id)} className='h-8 px-3 rounded-lg border border-slate-200 bg-white items-center justify-center flex-row gap-1 active:bg-slate-50' >
                                                 <Ionicons name='pause-outline' size={14} color='#dc2626' />
-                                                <Text>Stop</Text>
-                                            </Pressable>) :
-                                            (
-                                                <Pressable onPress={() => handleStartTask(feedIntegration.id)} className='h-8 px-3 rounded-lg border border-slate-200 bg-white items-center justify-center flex-row gap-1 active:bg-slate-50'>
-                                                    <Ionicons name='play-outline' size={14} color='#22c55e' />
-                                                    <Text>Start</Text>
-                                                </Pressable>)
+                                                <Text className='text-xs font-medium text-slate-700'>Stop</Text>
+                                            </Pressable>
+                                        ) : (
+                                            <Pressable onPress={() => handleStartTask(feedIntegration.id)} className='h-8 px-3 rounded-lg border border-slate-200 bg-white items-center justify-center flex-row gap-1 active:bg-slate-50'>
+                                                <Ionicons name='play-outline' size={14} color='#22c55e' />
+                                                <Text className='text-xs font-medium text-slate-700'>Start</Text>
+                                            </Pressable>
+                                        )
                                     }
                                 </View>
                             </View>
@@ -617,16 +703,30 @@ const Dashboard = () => {
                         {automatedUsers.map((user) => (
                             <View key={user.id} className='w-full flex-row items-center justify-between border border-slate-100 rounded-xl p-4 bg-slate-50/50'>
                                 <View className='flex-row items-center gap-4 flex-1'>
-                                    <View className='w-10 h-10 rounded-lg bg-emerald-50 items-center justify-center'>
-                                        <Ionicons name='person-circle-outline' size={22} color='#10b981' />
-                                    </View>
+                                    {getAvatarUrl(user.profile?.avatar) ? (
+                                        <Image
+                                            source={{ uri: getAvatarUrl(user.profile?.avatar) }}
+                                            className="w-10 h-10 rounded-full bg-slate-100"
+                                        />
+                                    ) : (
+                                        <View className='w-10 h-10 rounded-full bg-emerald-50 items-center justify-center'>
+                                            <Ionicons name='person-circle-outline' size={22} color='#10b981' />
+                                        </View>
+                                    )}
                                     <View className='flex-1 gap-0.5'>
                                         <View className='flex-row items-center gap-2'>
-                                            <Text className='font-semibold text-slate-800 text-base'>{user.name}</Text>
+                                            <Text className='font-semibold text-slate-800 text-base'>
+                                                {user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : (user.name || user.id)}
+                                            </Text>
                                             <View className='bg-slate-200 px-1.5 py-0.5 rounded'>
                                                 <Text className='text-[10px] font-bold text-slate-600'>ID: {user.id}</Text>
                                             </View>
                                         </View>
+                                        {user.profile?.bio ? (
+                                            <Text className='text-xs text-slate-500' numberOfLines={1}>
+                                                {user.profile.bio}
+                                            </Text>
+                                        ) : null}
                                     </View>
                                 </View>
                                 <Pressable
@@ -821,7 +921,7 @@ const Dashboard = () => {
                                 <Text className='text-sm font-semibold text-slate-600'>First Name</Text>
                                 <TextInput
                                     style={styles.textInput}
-                                    placeholder="Enter user name"
+                                    placeholder="Enter first name"
                                     placeholderTextColor="#94a3b8"
                                     value={modalFirstName}
                                     onChangeText={setModalFirstName}
@@ -831,11 +931,55 @@ const Dashboard = () => {
                                 <Text className='text-sm font-semibold text-slate-600'>Last Name</Text>
                                 <TextInput
                                     style={styles.textInput}
-                                    placeholder="Enter user name"
+                                    placeholder="Enter last name"
                                     placeholderTextColor="#94a3b8"
                                     value={modalLastName}
                                     onChangeText={setModalLastName}
                                 />
+                            </View>
+                            <View className='gap-2'>
+                                <Text className='text-sm font-semibold text-slate-600'>Bio</Text>
+                                <TextInput
+                                    style={[styles.textInput, { minHeight: 60, textAlignVertical: 'top' }]}
+                                    multiline
+                                    numberOfLines={2}
+                                    placeholder="Tell us about yourself..."
+                                    placeholderTextColor="#94a3b8"
+                                    value={modalBio}
+                                    onChangeText={setModalBio}
+                                />
+                            </View>
+                            <View className='gap-2'>
+                                <Text className='text-sm font-semibold text-slate-600'>Profile Avatar</Text>
+                                {modalAvatar ? (
+                                    <View className="flex-row items-center justify-between border border-slate-200 p-2 rounded-lg bg-slate-50">
+                                        <Text
+                                            ellipsizeMode="middle"
+                                            numberOfLines={1}
+                                            className="flex-1 text-xs text-slate-600 mr-2"
+                                        >
+                                            {modalAvatar.split("/").pop()}
+                                        </Text>
+                                        <Pressable
+                                            className="bg-red-500 px-3 py-1.5 rounded-md"
+                                            onPress={() => setModalAvatar(null)}
+                                        >
+                                            <Text className="text-xs text-white font-semibold">
+                                                Remove
+                                            </Text>
+                                        </Pressable>
+                                    </View>
+                                ) : (
+                                    <Pressable
+                                        onPress={pickImage}
+                                        className="flex-row items-center gap-2 p-2.5 justify-center bg-blue-50 border border-blue-200 rounded-lg active:bg-blue-100"
+                                    >
+                                        <Ionicons name="cloud-upload" size={18} color="#2563eb" />
+                                        <Text className="text-blue-600 text-xs font-semibold">
+                                            Upload Avatar
+                                        </Text>
+                                    </Pressable>
+                                )}
                             </View>
                         </View>
 

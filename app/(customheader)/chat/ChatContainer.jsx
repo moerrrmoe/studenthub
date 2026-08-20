@@ -5,9 +5,11 @@ import axios from "axios";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Button,
   FlatList,
   Image,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -20,6 +22,14 @@ import FloatingActionButton from "../../../components/floating-action-button";
 import ChatList from "../chat-list";
 import AiChat from "./ai-chat";
 
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080/";
+
+const EMOJI_CATEGORIES = {
+  smileys: ["😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇", "🙂", "🙃", "😉", "😌", "😍", "🥰", "😘", "😗", "😙", "😚", "😋", "😛", "😝", "😜", "🤪", "🤨", "🧐", "🤓", "😎", "🤩", "🥳", "😏", "😒", "😞", "😔", "😟", "😕", "🙁", "☹️", "😣", "😖", "😫", "😩", "🥺", "😢", "😭", "😤", "😠", "😡", "🤬", "🤯", "😳", "🥵", "🥶", "😱", "😨", "😰", "😥", "😓", "🤗", "🤔", "🤭", "🤫", "🤥", "😶", "😐", "😑", "😬", "🙄", "😯", "😦", "😧", "😮", "😲", "🥱", "😴", "🤤", "😪", "😵", "🤐", "🥴", "🤢", "🤮", "🤧", "😷", "🤒", "🤕", "🤠", "😈", "👿", "👹", "👺", "💩", "👻", "💀", "👽", "👾", "🤖"],
+  gestures: ["👋", "🤚", "🖐️", "✋", "🖖", "👌", "🤌", "🤏", "✌️", "🤞", "🤟", "🤘", "🤙", "👈", "👉", "👆", "🖕", "👇", "☝️", "👍", "👎", "✊", "👊", "🤛", "🤜", "👏", "🙌", "👐", "🤲", "🤝", "🙏", "✍️", "💅", "🤳", "💪", "👂", "👃", "👀", "👁️", "👅", "👄", "💋"],
+  hearts: ["❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "🤎", "💔", "❤️‍🔥", "❤️‍🩹", "❣️", "💕", "💞", "💓", "💗", "💖", "💘", "💝", "💟", "🎉", "✨", "🔥", "💥", "⭐", "🌟", "🎈", "🎁", "🎂", "🎄", "🎃", "🏁", "🚩"]
+};
+
 const ChatContainer = ({ chatId }) => {
   const router = useRouter();
   const { getToken } = useAuth();
@@ -30,38 +40,145 @@ const ChatContainer = ({ chatId }) => {
   const [chatCreateModalChatName, setChatCreateModalChatName] = useState("");
   const [chatLeaveModalVisible, setChatLeaveModalVisible] = useState(false);
   const [chatInviteModalVisible, setChatInviteModalVisible] = useState(false);
-  const [chatType, setChatType] = useState("personal")
-  const chatListRef = useRef();
-  const [refreshToken, setRefreshToken] = useState(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [activeEmojiCategory, setActiveEmojiCategory] = useState("smileys");
+
+  const handleEmojiPress = () => {
+    if (showEmojiPicker) {
+      setShowEmojiPicker(false);
+    } else {
+      Keyboard.dismiss();
+      setShowEmojiPicker(true);
+    }
+  };
+
+  const handleEmojiSelect = (emoji) => {
+    setMessage((prev) => prev + emoji);
+  };
+  const [chatType, setChatType] = useState("personal");
+  const [chatDetails, setChatDetails] = useState(null);
+  const [refreshChatListKey, setRefreshChatListKey] = useState(0);
   const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [uninvitedFollowers, setUninvitedFollowers] = useState([]);
   const [selectedUninvitedFollowers, setSelectedUninvitedFollowers] = useState([]);
 
-  const isChatSelected = !!chatId;
-  const chatName = "Study Group";
-
-  const mockMessages = [
-    { id: 1, message: "Hey! Are you going to the study group tonight?", senderId: 2, time: "10:00 AM" },
-    { id: 2, message: "Yeah, I plan to. What topic are we focusing on?", senderId: 1, time: "10:02 AM" },
-    { id: 67, message: "Nah, I'm good. I need to catch up on readings. Have fun!", senderId: 1, time: "12:16 PM" },
-    { id: 68, message: "Will do! See you at 6! Don't forget the snacks!", senderId: 2, time: "12:17 PM" },
-  ];
-
   const [messages, setMessages] = useState([]);
+  const [messagesPagination, setMessagesPagination] = useState(null);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [isLoadingOlderMessages, setIsLoadingOlderMessages] = useState(false);
 
-  const fetchMessages = async () => {
-    const token = await getToken();
-    const response = await axios.get(`http://localhost:8080/chat/${chatId}?page=1`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    console.log(response.data)
-    if (response.data.success) {
-      setChatType(response.data.data.type)
-      setMessages((prev) => (response.data.data.messages.reverse()));
+  const isFetchingMessagesRef = useRef(false);
+
+  const isChatSelected = !!chatId;
+
+  const getCleanUrl = (endpoint) => {
+    const cleanBase = API_BASE_URL.endsWith("/")
+      ? API_BASE_URL
+      : `${API_BASE_URL}/`;
+    return `${cleanBase}${endpoint}`;
+  };
+
+  const getFallbackAvatar = (label = "U") => {
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      label
+    )}&background=E5E7EB&color=374151&size=200&rounded=true`;
+  };
+
+  const getAvatarUrl = (avatar, name = "", type = "person") => {
+    const normalizedAvatar = typeof avatar === "string" ? avatar.trim() : avatar;
+    if (!normalizedAvatar) {
+      const fallbackLabel =
+        type === "group"
+          ? "GP"
+          : ((name || "U").trim().charAt(0).toUpperCase() || "U");
+      return getFallbackAvatar(fallbackLabel);
+    }
+    if (normalizedAvatar.startsWith("http")) return normalizedAvatar;
+    const cleanBase = API_BASE_URL.endsWith("/")
+      ? API_BASE_URL.slice(0, -1)
+      : API_BASE_URL;
+    const cleanPath = normalizedAvatar.startsWith("/") ? normalizedAvatar : `/${normalizedAvatar}`;
+    return `${cleanBase}${cleanPath}`;
+  };
+
+  const fetchMessages = async (page = 1, append = false) => {
+    if (!chatId || chatId === "ai" || isFetchingMessagesRef.current) return;
+    try {
+      isFetchingMessagesRef.current = true;
+      if (page === 1 && !append) {
+        setIsLoadingMessages(true);
+      } else {
+        setIsLoadingOlderMessages(true);
+      }
+
+      const token = await getToken();
+      const response = await axios.get(getCleanUrl(`chat/${chatId}`), {
+        params: { page, limit: 20 },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.data?.success) {
+        const chatData = response.data.data;
+        setChatType(chatData.type);
+        const otherMember = chatData.members?.find((member) => member.userId !== user?.id);
+        const chatDisplayName =
+          chatData.type === "group"
+            ? chatData.name
+            : `${otherMember?.user?.firstName || ""} ${otherMember?.user?.lastName || ""}`.trim() || "Chat";
+        const chatAvatarUri =
+          chatData.type === "group"
+            ? getAvatarUrl(chatData.chatAvatar, chatData.name || "Group", "group")
+            : getAvatarUrl(
+              otherMember?.user?.profile?.avatar,
+              `${otherMember?.user?.firstName || ""} ${otherMember?.user?.lastName || ""}`.trim(),
+              "person"
+            );
+
+        setChatDetails({
+          chatName: chatDisplayName,
+          chatAvatar: chatAvatarUri,
+          members: chatData.members,
+        });
+
+        const fetchedMessages = chatData.messages || [];
+
+        if (append) {
+          // In inverted FlatList, older messages are appended to the end of the array
+          setMessages((prev) => {
+            const existingIds = new Set(prev.map((m) => m.id));
+            const uniqueOlder = fetchedMessages.filter((m) => !existingIds.has(m.id));
+            return [...prev, ...uniqueOlder];
+          });
+        } else {
+          setMessages(fetchedMessages);
+        }
+
+        setMessagesPagination(chatData.messagesPagination || null);
+      }
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+    } finally {
+      isFetchingMessagesRef.current = false;
+      setIsLoadingMessages(false);
+      setIsLoadingOlderMessages(false);
     }
   };
+
+  const handleLoadOlderMessages = () => {
+    if (isLoadingOlderMessages || isFetchingMessagesRef.current) return;
+    if (
+      !messagesPagination ||
+      !messagesPagination.hasMore ||
+      !messagesPagination.nextPage
+    ) {
+      return;
+    }
+    fetchMessages(messagesPagination.nextPage, true);
+  };
+
+  console.log(chatDetails)
 
   const getUninvitedFollowers = async () => {
     if (!chatId) return setUninvitedFollowers([]);
@@ -82,6 +199,43 @@ const ChatContainer = ({ chatId }) => {
       }
     } catch (error) {
       console.log(error)
+    }
+  }
+
+  const markAsRead = async (message) => {
+    if (messages?.length == 0) return;
+    if (!chatDetails) return;
+    if (message.senderId === user?.id) return; // Don't mark own messages as read
+    const seenByArray = Array.isArray(message?.seenBy) ? message.seenBy : [];
+    if (seenByArray.some((s) => s.userId === user?.id)) return console.log('already read', message.id);
+    try {
+      const token = await getToken();
+      const res = await axios.post(`${API_BASE_URL}message/read`, {
+        messageId: message.id,
+        userId: user?.id
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (res.data?.success) {
+        setMessages(prev =>
+          prev.map((msg) => {
+            if (msg.id === message.id) {
+              return {
+                ...msg,
+                seenBy: [...seenByArray, res.data.data]
+              }
+            }
+            return msg
+          })
+        )
+        // Refresh the chat list unread counts
+        setRefreshChatListKey((prev) => prev + 1);
+      }
+    } catch (err) {
+      console.log(err)
     }
   }
 
@@ -122,7 +276,8 @@ const ChatContainer = ({ chatId }) => {
     socket.emit("new_message", {
       chatId: chatId,
       content: message.trim(),
-      senderId: user?.id
+      senderId: user?.id,
+      seenBy: [],
     });
 
     setMessage("");
@@ -138,17 +293,20 @@ const ChatContainer = ({ chatId }) => {
         headers: {
           Authorization: `Bearer ${token}`
         }
-      })
+      });
       if (res.data.success) {
-        setRefreshToken(Date.now())
         setIsChatCreateModalVisible(false);
         setChatCreateModalChatName("");
+        setRefreshChatListKey((prev) => prev + 1);
+        const newChatId = res.data?.data?.id || res.data?.chat?.id || res.data?.id;
+        if (newChatId) {
+          router.push(`/chat/${newChatId}`);
+        }
       }
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-
-  }
+  };
 
   const leaveChat = async () => {
     try {
@@ -160,15 +318,17 @@ const ChatContainer = ({ chatId }) => {
         data: {
           targetUserId: user?.id
         }
-      })
+      });
       if (res.data.success) {
-        setRefreshToken(Date.now())
-        router.back();
+        setChatLeaveModalVisible(false);
+        setRefreshChatListKey((prev) => prev + 1);
+        router.replace('/chat');
       }
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-  }
+  };
+
   const toggleFollowerSelection = (followerId) => {
     setSelectedUninvitedFollowers((prev) => {
       if (prev.includes(followerId)) {
@@ -201,7 +361,8 @@ const ChatContainer = ({ chatId }) => {
       );
       setChatInviteModalVisible(false);
       setSelectedUninvitedFollowers([]);
-      setRefreshToken(Date.now());
+      getUninvitedFollowers();
+      setRefreshChatListKey((prev) => prev + 1);
     } catch (error) {
       console.log(error);
     }
@@ -214,13 +375,14 @@ const ChatContainer = ({ chatId }) => {
 
     return (
       <View
+        onLayout={() => markAsRead(item)}
         className={`max-w-[80%] flex-row ${isMe
           ? "ml-auto mr-1"
           : "ml-1 mr-auto"
           }`}
       >
         {!isMe && chatType == 'group' && (
-          <Image className={"w-8 h-8 mr-2 rounded-full shrink-0"} source={{ uri: "https://placehold.co/150x150" }} />
+          <Image className={"w-8 h-8 mr-2 rounded-full border border-blue-500 shrink-0"} source={{ uri: "http://localhost:8080" + chatDetails?.members?.find((member) => member.userId == item.senderId)?.user?.profile?.avatar }} />
         )}
         <View className={`rounded-2xl px-4 py-2.5 my-1 shrink ${isMe ? "bg-blue-600 rounded-tr-sm" : "bg-white border border-gray-100 rounded-tl-sm"}`}>
           <Text className={`text-sm leading-5 ${isMe ? "text-white" : "text-gray-800"}`}>
@@ -234,7 +396,7 @@ const ChatContainer = ({ chatId }) => {
 
         </View>
         {isMe && chatType == 'group' && (
-          <Image source={{ uri: "https://placehold.co/150x150" }} className="w-8 h-8 ml-2 rounded-full shrink-0" />
+          <Image source={{ uri: "http://localhost:8080" + chatDetails?.members?.find((member) => member.userId == item.senderId)?.user?.profile?.avatar }} className="w-8 h-8 ml-2 rounded-full border-2 border-blue-500 shrink-0" />
         )}
       </View>
     );
@@ -268,7 +430,12 @@ const ChatContainer = ({ chatId }) => {
             />
           </View>
         </View>
-        <ChatList forceRefreshToken={refreshToken} activeChatId={chatId} searchQuery={searchQuery} />
+        <ChatList
+          refreshTrigger={refreshChatListKey}
+          onCreateChat={() => setIsChatCreateModalVisible(true)}
+          activeChatId={chatId}
+          searchQuery={searchQuery}
+        />
         <FloatingActionButton onPress={() => setIsChatCreateModalVisible(true)} icon={<Ionicons name="create-outline" size={18} color="white" />} />
       </View>
 
@@ -354,12 +521,12 @@ const ChatContainer = ({ chatId }) => {
 
               <View className="flex-row items-center flex-1 gap-3">
                 <Image
-                  source={{ uri: 'https://i.pravatar.cc/150?img=11' }}
+                  source={{ uri: chatDetails?.chatAvatar }}
                   className="w-9 h-9 rounded-full bg-gray-100"
                 />
                 <View className="flex-col">
-                  <Text className="text-sm font-semibold text-gray-900">{chatName}</Text>
-                  <Text className="text-xs text-green-500 font-medium">Online</Text>
+                  <Text className="text-sm font-semibold text-gray-900">{chatDetails?.chatName}</Text>
+                  {chatType == 'group' ? <Text className="text-xs text-gray-500 font-medium">{chatDetails.members?.length + " " + "members"}</Text> : <Text className="text-xs text-gray-400 font-medium">Last Seen Recently</Text>}
                 </View>
               </View>
 
@@ -376,14 +543,25 @@ const ChatContainer = ({ chatId }) => {
               contentContainerStyle={{ paddingVertical: 16 }}
               renderItem={renderMessages}
               data={messages}
-              keyExtractor={(message) => message?.id?.toString()}
+              keyExtractor={(item, index) =>
+                item?.id ? `msg-${item.id}` : `msg-idx-${index}`
+              }
+              onEndReached={handleLoadOlderMessages}
+              onEndReachedThreshold={0.4}
+              ListFooterComponent={
+                isLoadingOlderMessages ? (
+                  <View className="py-3 items-center justify-center">
+                    <ActivityIndicator size="small" color="#2563eb" />
+                    <Text className="text-[11px] text-gray-400 mt-1">
+                      Loading older messages...
+                    </Text>
+                  </View>
+                ) : null
+              }
             />
 
             {/* Input Area */}
             <View className="bg-white px-4 py-2.5 border-t border-gray-200 flex-row items-center gap-2">
-              <Pressable className="p-2 rounded-full hover:bg-gray-100">
-                <Ionicons name="add" size={22} color="#9ca3af" />
-              </Pressable>
 
               <View className="flex-row flex-1 bg-gray-100 rounded-full items-center px-4 min-h-[40px] max-h-[100px]">
                 <TextInput
@@ -393,9 +571,14 @@ const ChatContainer = ({ chatId }) => {
                   multiline
                   value={message}
                   onChangeText={setMessage}
+                  onFocus={() => setShowEmojiPicker(false)}
                 />
-                <Pressable className="ml-2 py-2">
-                  <Ionicons name="happy-outline" size={20} color="#9ca3af" />
+                <Pressable onPress={handleEmojiPress} className="ml-2 py-2">
+                  <Ionicons
+                    name={showEmojiPicker ? "keypad-outline" : "happy-outline"}
+                    size={20}
+                    color={showEmojiPicker ? "#2563eb" : "#9ca3af"}
+                  />
                 </Pressable>
               </View>
 
@@ -407,6 +590,50 @@ const ChatContainer = ({ chatId }) => {
                 <Ionicons name="send" size={18} color="white" />
               </Pressable>
             </View>
+
+            {/* Emoji Selector Keyboard */}
+            {showEmojiPicker && (
+              <View className="h-64 bg-gray-50 border-t border-gray-200">
+                {/* Category Tabs */}
+                <View className="flex-row border-b border-gray-200 bg-white">
+                  <Pressable
+                    onPress={() => setActiveEmojiCategory("smileys")}
+                    className={`flex-1 py-3 items-center justify-center border-b-2 ${activeEmojiCategory === "smileys" ? "border-blue-600" : "border-transparent"}`}
+                  >
+                    <Ionicons name="happy-outline" size={20} color={activeEmojiCategory === "smileys" ? "#2563eb" : "#6b7280"} />
+                  </Pressable>
+                  <Pressable
+                    onPress={() => setActiveEmojiCategory("gestures")}
+                    className={`flex-1 py-3 items-center justify-center border-b-2 ${activeEmojiCategory === "gestures" ? "border-blue-600" : "border-transparent"}`}
+                  >
+                    <Ionicons name="hand-left-outline" size={20} color={activeEmojiCategory === "gestures" ? "#2563eb" : "#6b7280"} />
+                  </Pressable>
+                  <Pressable
+                    onPress={() => setActiveEmojiCategory("hearts")}
+                    className={`flex-1 py-3 items-center justify-center border-b-2 ${activeEmojiCategory === "hearts" ? "border-blue-600" : "border-transparent"}`}
+                  >
+                    <Ionicons name="heart-outline" size={20} color={activeEmojiCategory === "hearts" ? "#2563eb" : "#6b7280"} />
+                  </Pressable>
+                </View>
+
+                {/* Grid of Emojis */}
+                <FlatList
+                  data={EMOJI_CATEGORIES[activeEmojiCategory]}
+                  keyExtractor={(item) => item}
+                  numColumns={Platform.OS === 'web' ? 10 : 8}
+                  contentContainerStyle={{ padding: 10, paddingBottom: 30 }}
+                  columnWrapperStyle={{ justifyContent: 'flex-start', gap: 10, marginBottom: 12 }}
+                  renderItem={({ item }) => (
+                    <Pressable
+                      onPress={() => handleEmojiSelect(item)}
+                      className="w-10 h-10 items-center justify-center rounded-lg hover:bg-gray-200 active:bg-gray-300"
+                    >
+                      <Text className="text-2xl">{item}</Text>
+                    </Pressable>
+                  )}
+                />
+              </View>
+            )}
           </>
         ) : (
           // --- EMPTY STATE PLACEHOLDER (Desktop Only) ---

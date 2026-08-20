@@ -79,9 +79,31 @@ const markdownStyles = {
   },
 };
 
+const formatRelativeTime = (dateString) => {
+  if (!dateString) return "";
+  try {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    
+    return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  } catch (err) {
+    return "";
+  }
+};
+
 const PostCard = ({
   postId,
   postLikes = [],
+  postDislikes = [],
   postTitle,
   postBody,
   postImage,
@@ -90,7 +112,8 @@ const PostCard = ({
   authorAvatar,
   authorId,
   postComments = [],
-  isDetailView = false
+  isDetailView = false,
+  createdAt
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   // Added some mock data to show how the conversation UI looks
@@ -134,6 +157,12 @@ const PostCard = ({
   }, [user, postLikes]);
 
   useEffect(() => {
+    if (user?.id && postDislikes) {
+      setIsDisliked(postDislikes.some((dislike) => dislike?.userId === user.id));
+    }
+  }, [user, postDislikes]);
+
+  useEffect(() => {
     if (postLikes) {
       setLikesCount(postLikes.length);
     }
@@ -157,10 +186,34 @@ const PostCard = ({
   const handleLike = async () => {
     if (!user?.id) return;
     try {
-      const res = await axios.post('http://localhost:8080/post/' + postId + '/like', { userId: user.id })
+      const endpoint = isLiked
+        ? `http://localhost:8080/post/${postId}/unlike`
+        : `http://localhost:8080/post/${postId}/like`;
+      const res = await axios.post(endpoint, { userId: user.id })
       if (res.data.success) {
         setLikesCount(prev => isLiked ? prev - 1 : prev + 1);
         setIsLiked(!isLiked);
+        // If liking, remove dislike (mutual exclusion)
+        if (!isLiked && isDisliked) {
+          setIsDisliked(false);
+        }
+      }
+    } catch (e) {
+      console.log(e.message)
+    }
+  }
+
+  const handleDislike = async () => {
+    if (!user?.id) return;
+    try {
+      const res = await axios.post(`http://localhost:8080/post/${postId}/dislike`, { userId: user.id })
+      if (res.data.success) {
+        setIsDisliked(!isDisliked);
+        // If disliking, remove like (mutual exclusion)
+        if (!isDisliked && isLiked) {
+          setIsLiked(false);
+          setLikesCount(prev => prev - 1);
+        }
       }
     } catch (e) {
       console.log(e.message)
@@ -221,7 +274,9 @@ const PostCard = ({
               <Text className="text-sm font-semibold text-gray-900 leading-tight">
                 {authorName}
               </Text>
-              <Text className="text-xs text-gray-400 mt-0.5">Post time</Text>
+              <Text className="text-xs text-gray-400 mt-0.5">
+                {createdAt ? formatRelativeTime(createdAt) : "Post time"}
+              </Text>
             </View>
           </Pressable>
           <Pressable className="p-1.5 rounded-full hover:bg-gray-100">
@@ -253,7 +308,8 @@ const PostCard = ({
         ) : postImage ? (
           <Image
             source={postImage}
-            className="w-full max-w-[850px] h-[400px] rounded-lg"
+            contentFit="cover"
+            className="w-full max-w-[850px] h-[400px] rounded-lg bg-gray-100"
           />
         ) : null}
       </CardContent>
@@ -269,7 +325,7 @@ const PostCard = ({
           </Pressable>
           <Text className="text-sm font-semibold text-gray-700">{likesCount}</Text>
           <View className="w-px h-4 bg-gray-300" />
-          <Pressable onPress={() => setIsDisliked(!isDisliked)} className="p-1">
+          <Pressable onPress={handleDislike} className="p-1">
             {isDisliked ? (
               <FontAwesome name="thumbs-down" className="scale-x-[-1]" size={20} color="#2563eb" />
             ) : (

@@ -1,11 +1,18 @@
+import { useAuth } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import axios from 'axios';
+import { router } from 'expo-router';
+
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080/";
 
 const PublicCollections = () => {
     const router = useRouter();
     const [searchQuery, setSearchQuery] = useState("");
+    const [publicCollections, setPublicCollections] = useState([]);
+    const { getToken } = useAuth();
 
     const mockPublicCollections = [
         {
@@ -52,9 +59,25 @@ const PublicCollections = () => {
         }
     ];
 
-    const filteredCollections = mockPublicCollections.filter(c =>
+    const filteredCollections = publicCollections.filter(c =>
         c.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+    useEffect(() => {
+        const fetchPublicCollections = async () => {
+            try {
+                const token = await getToken();
+                const cleanBase = API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
+                const res = await axios.get(cleanBase + "collection/public?page=1", { headers: { Authorization: token } })
+                if (res.data.success) {
+                    setPublicCollections(res.data.data[0])
+                }
+            } catch (error) {
+                console.error("Error fetching collection", error)
+            }
+        }
+        fetchPublicCollections();
+    }, [])
 
     return (
         <ScrollView className='flex-1 bg-gray-50' showsVerticalScrollIndicator={false}>
@@ -99,6 +122,7 @@ const PublicCollections = () => {
                 <View className='flex-row flex-wrap gap-4'>
                     {filteredCollections.map((item) => (
                         <Pressable
+                        onPress={()=>router.push(`/study-space/collection/${item.id}`)}
                             key={item.id}
                             className="bg-white p-4 w-[47%] lg:w-[30%] rounded-2xl border border-gray-100 shadow-sm active:scale-[0.98] transition-all"
                         >
@@ -114,16 +138,16 @@ const PublicCollections = () => {
                                 {item.name}
                             </Text>
                             <Text className='text-xs text-purple-600 font-semibold mb-2'>
-                                {item.booksCount} books
+                                {item._count.books} books
                             </Text>
                             <View className='flex-row items-center border-t border-gray-50 pt-2 mt-auto'>
                                 <View className='w-5 h-5 rounded-full bg-gray-200 items-center justify-center'>
                                     <Text className='text-[8px] font-bold text-gray-600'>
-                                        {item.authorName.split(' ').map(n => n[0]).join('')}
+                                        {item.owner.firstName.charAt(0) + item.owner.lastName.charAt(0)}
                                     </Text>
                                 </View>
                                 <Text className='text-[10px] text-gray-500 ml-1.5 font-medium' numberOfLines={1}>
-                                    {item.authorName}
+                                    {item.owner.firstName + " " + item.owner.lastName}
                                 </Text>
                             </View>
                         </Pressable>

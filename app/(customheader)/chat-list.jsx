@@ -1,45 +1,183 @@
+import { socket } from "@/lib/socket";
 import { useAuth, useUser } from "@clerk/expo";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import axios from "axios";
-import { router } from "expo-router";
-import { useEffect, useState } from "react";
-import { FlatList, Image, Platform, Pressable, Text, View } from "react-native";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  Image,
+  Platform,
+  Pressable,
+  RefreshControl,
+  Text,
+  View,
+} from "react-native";
 
-const ChatList = ({ activeChatId, searchQuery = "", forceRefreshToken = null }) => {
-  const [conversations, setConversations] = useState([]);
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080/";
+
+let cachedConversations = [];
+let isInitialFetched = false;
+const listeners = new Set();
+
+const notifyListeners = () => {
+  listeners.forEach((listener) => listener(cachedConversations));
+};
+
+const ChatList = ({
+  activeChatId,
+  searchQuery = "",
+  refreshTrigger = null,
+  onCreateChat,
+}) => {
+  const [conversations, setConversations] = useState(cachedConversations);
+  const [paginationMeta, setPaginationMeta] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const { user } = useUser();
   const { getToken } = useAuth();
+  const getTokenRef = useRef(getToken);
+  getTokenRef.current = getToken;
 
-  useEffect(() => {
-    const fetchConversations = async () => {
+  const isFetchingConversationsRef = useRef(false);
+
+  const getCleanUrl = (endpoint) => {
+    const cleanBase = API_BASE_URL.endsWith("/")
+      ? API_BASE_URL
+      : `${API_BASE_URL}/`;
+    return `${cleanBase}${endpoint}`;
+  };
+
+  const getFallbackAvatar = (label = "U") => {
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      label
+    )}&background=E5E7EB&color=374151&size=200&rounded=true`;
+  };
+
+  const getAvatarUrl = (avatar, name = "", type = "person") => {
+    const normalizedAvatar = typeof avatar === "string" ? avatar.trim() : avatar;
+    if (!normalizedAvatar) {
+      const fallbackLabel =
+        type === "group"
+          ? "GP"
+          : ((name || "U").trim().charAt(0).toUpperCase() || "U");
+      return getFallbackAvatar(fallbackLabel);
+    }
+    if (normalizedAvatar.startsWith("http")) return normalizedAvatar;
+    const cleanBase = API_BASE_URL.endsWith("/")
+      ? API_BASE_URL.slice(0, -1)
+      : API_BASE_URL;
+    const cleanPath = normalizedAvatar.startsWith("/") ? normalizedAvatar : `/${normalizedAvatar}`;
+    return `${cleanBase}${cleanPath}`;
+  };
+
+  const fetchConversations = useCallback(
+    async (page = 1, append = false, isPullToRefresh = false) => {
+      if (isFetchingConversationsRef.current) return;
       try {
-        const token = await getToken();
-        const res = await axios.get("http://localhost:8080/chat/belonging?page=1", {
+        isFetchingConversationsRef.current = true;
+        if (isPullToRefresh) setRefreshing(true);
+        if (append) setIsLoadingMore(true);
+
+        const token = await getTokenRef.current();
+        const res = await axios.get(getCleanUrl("chat/belonging"), {
+          params: { page },
           headers: {
-            Authorization: `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         });
 
-        if (res.data.success) {
-          setConversations(res.data.data[0]);
+        if (res.data?.success) {
+          const responseData = res.data.data;
+          let data = [];
+          let meta = null;
+
+          if (Array.isArray(responseData)) {
+            if (Array.isArray(responseData[0])) {
+              data = responseData[0];
+              meta = responseData[1] || null;
+            } else {
+              data = responseData;
+            }
+          }
+
+          if (append) {
+            setConversations((prev) => [...prev, ...data]);
+          } else {
+            cachedConversations = data;
+            isInitialFetched = true;
+            setConversations(data);
+            notifyListeners();
+          }
+          setPaginationMeta(meta);
         } else {
-          console.log(res.data.message);
+          console.log(res.data?.message);
         }
       } catch (error) {
         console.log(error);
+      } finally {
+        isFetchingConversationsRef.current = false;
+        if (isPullToRefresh) setRefreshing(false);
+        setIsLoadingMore(false);
+      }
+    },
+    []
+  );
+
+  // Subscribe to cache updates across component instances
+  useEffect(() => {
+    const handleUpdate = (updatedList) => {
+      if (!searchQuery.trim()) {
+        setConversations(updatedList);
       }
     };
-    if (!searchQuery.trim()) {
-      fetchConversations();
-    }
-  }, [user, searchQuery]);
+    listeners.add(handleUpdate);
+    return () => {
+      listeners.delete(handleUpdate);
+    };
+  }, [searchQuery]);
 
+  // Initial fetch on screen focus, and register socket updates only while screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      if (!user?.id) return;
+      if (searchQuery.trim()) return;
+
+      fetchConversations(1, false);
+
+      socket.connect();
+      const handleIncomingMessage = () => {
+        fetchConversations(1, false);
+      };
+
+      socket.on("message_received", handleIncomingMessage);
+
+      return () => {
+        socket.off("message_received", handleIncomingMessage);
+      };
+    }, [user?.id, searchQuery, fetchConversations])
+  );
+
+  // Fetch when explicit refresh trigger changed (e.g. creating/leaving/reading a chat), debounced to avoid rapid updates
   useEffect(() => {
-    if (forceRefreshToken !== null) {
-      router.replace('/chat')
+    if (!user?.id) return;
+    if (searchQuery.trim()) return;
 
+    if (refreshTrigger !== null && refreshTrigger > 0) {
+      const delayDebounceFn = setTimeout(() => {
+        fetchConversations(1, false);
+      }, 300);
+      return () => clearTimeout(delayDebounceFn);
     }
-  }, [forceRefreshToken]);
+  }, [user?.id, refreshTrigger, searchQuery, fetchConversations]);
+
+  // Restore cached conversations when search query is cleared
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setConversations(cachedConversations);
+    }
+  }, [searchQuery]);
 
   // Debounced search
   useEffect(() => {
@@ -47,13 +185,24 @@ const ChatList = ({ activeChatId, searchQuery = "", forceRefreshToken = null }) 
 
     const timer = setTimeout(async () => {
       try {
-        const token = await getToken();
-        const res = await axios.get(
-          `http://localhost:8080/chat/search?query=${encodeURIComponent(searchQuery.trim())}&page=1`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        if (res.data.success) {
-          setConversations(res.data.data[0]);
+        const token = await getTokenRef.current();
+        const res = await axios.get(getCleanUrl("chat/search"), {
+          params: {
+            query: searchQuery.trim(),
+            page: 1,
+          },
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.data?.success) {
+          const responseData = res.data.data;
+          const data = Array.isArray(responseData[0])
+            ? responseData[0]
+            : responseData;
+          const meta = Array.isArray(responseData)
+            ? responseData[1]
+            : null;
+          setConversations(data);
+          setPaginationMeta(meta);
         }
       } catch (error) {
         console.log(error);
@@ -63,15 +212,91 @@ const ChatList = ({ activeChatId, searchQuery = "", forceRefreshToken = null }) 
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  const handleLoadMore = async () => {
+    if (isLoadingMore || isFetchingConversationsRef.current || !paginationMeta || paginationMeta.isLastPage) return;
+
+    const nextPage = paginationMeta.nextPage;
+    if (!nextPage) return;
+
+    if (searchQuery.trim()) {
+      try {
+        setIsLoadingMore(true);
+        isFetchingConversationsRef.current = true;
+        const token = await getTokenRef.current();
+        const res = await axios.get(getCleanUrl("chat/search"), {
+          params: {
+            query: searchQuery.trim(),
+            page: nextPage,
+          },
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.data?.success) {
+          const responseData = res.data.data;
+          const data = Array.isArray(responseData[0])
+            ? responseData[0]
+            : responseData;
+          const meta = Array.isArray(responseData)
+            ? responseData[1]
+            : null;
+          setConversations((prev) => [...prev, ...data]);
+          setPaginationMeta(meta);
+        }
+      } catch (error) {
+        console.log(error);
+      } finally {
+        isFetchingConversationsRef.current = false;
+        setIsLoadingMore(false);
+      }
+    } else {
+      fetchConversations(nextPage, true);
+    }
+  };
+
+  const renderFooter = () => {
+    if (isLoadingMore) {
+      return (
+        <View className="py-4 items-center justify-center">
+          <ActivityIndicator size="small" color="#2563eb" />
+        </View>
+      );
+    }
+    return null;
+  };
+
   const renderItem = ({ item }) => {
     const isActive = activeChatId === item.id;
+    const otherMember = item?.members?.find((m) => m?.userId !== user?.id);
+    const avatarUri =
+      item?.type === "group"
+        ? getAvatarUrl(item.chatAvatar, item?.name || "Group", "group")
+        : getAvatarUrl(
+          otherMember?.user?.profile?.avatar,
+          `${otherMember?.user?.firstName || ""} ${otherMember?.user?.lastName || ""}`.trim(),
+          "person"
+        );
+
+    const displayName =
+      item?.name ||
+      `${otherMember?.user?.firstName || ""} ${otherMember?.user?.lastName || ""}`.trim() ||
+      "Chat";
+
+    const lastMessage = item.messages && item.messages.length > 0 ? item.messages[0] : null;
+    let numberOfUnreadMessages = 0;
+    if (lastMessage && lastMessage.senderId !== user?.id) {
+      const seenByIds = lastMessage.seenBy ? lastMessage.seenBy.map((s) => s.userId) : [];
+      if (!seenByIds.includes(user?.id)) {
+        numberOfUnreadMessages = item.messages.filter((m) => {
+          const mSeenByIds = m?.seenBy ? m.seenBy.map((s) => s.userId) : [];
+          return m.senderId !== user?.id && !mSeenByIds.includes(user?.id);
+        }).length;
+      }
+    }
 
     return (
       <Pressable
         onPress={() => router.push(`/chat/${item?.id}`)}
-        className={`flex-row items-center px-4 py-3 border-b border-gray-100 cursor-pointer
-          ${isActive ? 'bg-blue-50' : 'bg-white hover:bg-gray-50'}
-        `}
+        className={`flex-row items-center px-4 py-3 border-b border-gray-100 cursor-pointer ${isActive ? "bg-blue-50" : "bg-white hover:bg-gray-50"
+          }`}
       >
         {/* Active state left indicator */}
         {isActive && (
@@ -81,12 +306,17 @@ const ChatList = ({ activeChatId, searchQuery = "", forceRefreshToken = null }) 
         {/* Avatar */}
         <View className="relative mr-3">
           <Image
-            source={{ uri: item.conversationImage || "https://placehold.co/150x150" }}
+            source={{ uri: avatarUri }}
             className="w-10 h-10 rounded-full bg-gray-100"
           />
-          {
-            item?.type == "group" && <Ionicons name="people" className="text-gray-400 absolute -bottom-1 -right-1" size={18} />
-          }
+
+          {item?.type === "group" && (
+            <Ionicons
+              name="people"
+              className="text-gray-400 absolute -bottom-1 -right-1"
+              size={18}
+            />
+          )}
         </View>
 
         {/* Message Content */}
@@ -96,20 +326,25 @@ const ChatList = ({ activeChatId, searchQuery = "", forceRefreshToken = null }) 
               className="text-sm font-semibold text-gray-900"
               numberOfLines={1}
             >
-              {item?.name || item?.members?.find((member) => member?.userId !== user?.id)?.user?.firstName + " " + item?.members?.find((member) => member?.userId !== user?.id)?.user?.lastName}
+              {displayName}
             </Text>
             <Text className="text-[11px] text-gray-400">
               {item.conversationTime}
             </Text>
           </View>
 
-          <View className="flex-row justify-between items-center">
+          <View className="flex-row  items-center">
             <Text
-              className="text-xs flex-1 mr-2 text-gray-400"
+              className={`text-xs mr-2 ${numberOfUnreadMessages > 0 ? "font-semibold text-gray-900" : "text-gray-400"}`}
               numberOfLines={1}
             >
-              {item.conversationMessage}
+              {lastMessage ? lastMessage.content : ""}
             </Text>
+            {numberOfUnreadMessages > 0 && (
+              <View className="w-4 h-4 rounded-full bg-red-500 items-center justify-center">
+                <Text className="text-[11px] font-bold text-white">{numberOfUnreadMessages > 9 ? "9+" : numberOfUnreadMessages}</Text>
+              </View>
+            )}
           </View>
         </View>
       </Pressable>
@@ -121,34 +356,65 @@ const ChatList = ({ activeChatId, searchQuery = "", forceRefreshToken = null }) 
       {/* Sidebar Header */}
       <View className="px-4 py-3 flex-row justify-between items-center border-b border-gray-100">
         <Text className="text-base font-semibold text-gray-900">Messages</Text>
-        <Pressable className="p-1.5 rounded-full hover:bg-gray-100 cursor-pointer">
-          <Ionicons name="create-outline" size={18} color="#9ca3af" />
-        </Pressable>
+        <View className="flex-row items-center gap-1">
+          <Pressable
+            onPress={() => fetchConversations(1, false, true)}
+            className="p-1.5 rounded-full hover:bg-gray-100 cursor-pointer"
+            disabled={refreshing}
+          >
+            <Ionicons
+              name="reload-outline"
+              size={16}
+              color={refreshing ? "#2563eb" : "#9ca3af"}
+            />
+          </Pressable>
+          {onCreateChat && (
+            <Pressable
+              onPress={onCreateChat}
+              className="p-1.5 rounded-full hover:bg-gray-100 cursor-pointer"
+            >
+              <Ionicons name="create-outline" size={18} color="#9ca3af" />
+            </Pressable>
+          )}
+        </View>
       </View>
 
       {/* List */}
       <FlatList
         data={conversations}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, index) =>
+          item.id ? `conv-${item.id}` : `conv-idx-${index}`
+        }
         renderItem={renderItem}
-        showsVerticalScrollIndicator={Platform.OS === 'web'}
+        showsVerticalScrollIndicator={Platform.OS === "web"}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => fetchConversations(1, false, true)}
+            colors={["#2563eb"]}
+            tintColor="#2563eb"
+          />
+        }
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={renderFooter}
         ListHeaderComponent={
           <Pressable
             className="flex-row items-center px-4 py-3 border-b border-gray-100 hover:bg-indigo-50 cursor-pointer"
-            style={{ backgroundColor: '#fafafe' }}
+            style={{ backgroundColor: "#fafafe" }}
             onPress={() => router.push("/chat/ai")}
           >
             {/* AI Avatar */}
             <View className="relative mr-3">
               <View
                 className="w-10 h-10 rounded-full items-center justify-center"
-                style={{ backgroundColor: '#6366f1' }}
+                style={{ backgroundColor: "#6366f1" }}
               >
                 <Ionicons name="sparkles" size={16} color="white" />
               </View>
               <View
                 className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white"
-                style={{ backgroundColor: '#22c55e' }}
+                style={{ backgroundColor: "#22c55e" }}
               />
             </View>
 
@@ -157,14 +423,14 @@ const ChatList = ({ activeChatId, searchQuery = "", forceRefreshToken = null }) 
               <View className="flex-row items-center gap-1.5 mb-0.5">
                 <Text
                   className="text-sm font-semibold"
-                  style={{ color: '#4338ca' }}
+                  style={{ color: "#4338ca" }}
                   numberOfLines={1}
                 >
                   Student Hub AI
                 </Text>
                 <View
                   className="px-1 py-px rounded"
-                  style={{ backgroundColor: '#6366f1' }}
+                  style={{ backgroundColor: "#6366f1" }}
                 >
                   <Text className="text-[8px] font-bold text-white">AI</Text>
                 </View>
@@ -187,8 +453,6 @@ const ChatList = ({ activeChatId, searchQuery = "", forceRefreshToken = null }) 
           </View>
         }
       />
-
-
     </View>
   );
 };

@@ -498,6 +498,17 @@
             }
         }
 
+        async function getPageContent(pageNum) {
+            try {
+                const page = await pdfDoc.getPage(pageNum);
+                const pageContent = await page.getTextContent();
+                const content = pageContent.items.map((item) => item.str).join('\n');
+                return content;
+            } catch (e) {
+                return null;
+            }
+        }
+
         pageInput.addEventListener('change', handleInputSubmit);
         pageInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
@@ -513,12 +524,14 @@
         });
 
         prevButton.addEventListener('click', () => {
+
             if (currentPage > 1 && !rendering) {
                 goToPage(currentPage - 1);
             }
         });
 
         nextButton.addEventListener('click', () => {
+
             if (pdfDoc && currentPage < pdfDoc.numPages && !rendering) {
                 goToPage(currentPage + 1);
             }
@@ -554,7 +567,7 @@
             });
         }
 
-        function renderPage(num) {
+        async function renderPage(num) {
             rendering = true;
             updateButtons();
 
@@ -578,6 +591,14 @@
                     updateButtons();
                 });
             });
+
+            const content = await getPageContent(currentPage);
+            window.parent.postMessage({
+                type: 'LOAD',
+                page: currentPage,
+                totalPages: pdfDoc.numPages,
+                content: content,
+            }, '*')
         }
 
         loadPDF();

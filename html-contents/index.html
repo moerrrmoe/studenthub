@@ -515,12 +515,22 @@
         prevButton.addEventListener('click', () => {
             if (currentPage > 1 && !rendering) {
                 goToPage(currentPage - 1);
+                window.parent.postMessage({
+                    type: 'NAVIGATE_PREV',
+                    page: currentPage,
+                    totalPages: pdfDoc.numPages
+                }, '*');
             }
         });
 
         nextButton.addEventListener('click', () => {
             if (pdfDoc && currentPage < pdfDoc.numPages && !rendering) {
                 goToPage(currentPage + 1);
+                window.parent.postMessage({
+                    type: 'NAVIGATE_NEXT',
+                    page: currentPage,
+                    totalPages: pdfDoc.numPages
+                }, '*');
             }
         });
 

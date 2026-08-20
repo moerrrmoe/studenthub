@@ -4,6 +4,7 @@ import { Stack, useRouter, useSegments } from "expo-router";
 import { useEffect } from "react";
 import { ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { ApiConfigProvider, useApiConfig } from "@/contexts/ApiConfigContext";
 import "../global.css";
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -16,11 +17,12 @@ if (!publishableKey) {
 
 function InitialLayout() {
   const { userId, isLoaded, isSignedIn } = useAuth();
+  const { isInitialized } = useApiConfig();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoaded) return;
+    if (!isLoaded || !isInitialized) return;
 
     const inAuthGroup = segments[0] === "(auth)";
 
@@ -29,9 +31,9 @@ function InitialLayout() {
     } else if (!isSignedIn && !inAuthGroup) {
       router.replace("/(auth)");
     }
-  }, [isSignedIn, isLoaded, segments, userId]);
+  }, [isSignedIn, isLoaded, isInitialized, segments, userId]);
 
-  if (!isLoaded) {
+  if (!isLoaded || !isInitialized) {
     return (
       <SafeAreaView className="h-[100vh] w-full items-center justify-center">
         <ActivityIndicator size={20} />
@@ -52,13 +54,14 @@ function InitialLayout() {
 
 export default function RootLayout() {
   return (
-    <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
-
-      <ClerkLoaded>
-        <SafeAreaView className="flex-1 bg-[#f5f6f8]">
-          <InitialLayout />
-        </SafeAreaView>
-      </ClerkLoaded>
-    </ClerkProvider>
+    <ApiConfigProvider>
+      <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
+        <ClerkLoaded>
+          <SafeAreaView className="flex-1 bg-[#f5f6f8]">
+            <InitialLayout />
+          </SafeAreaView>
+        </ClerkLoaded>
+      </ClerkProvider>
+    </ApiConfigProvider>
   );
 }

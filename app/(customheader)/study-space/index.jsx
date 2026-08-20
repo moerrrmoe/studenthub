@@ -5,15 +5,18 @@ import { useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { Button, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080/";
+
 const StudySpace = () => {
     const router = useRouter()
     const [searchQuery, setSearchQuery] = useState("")
     const [isCreateCollectionModalVisible, setIsCreateCollectionModalVisible] = useState(false)
     const [createModalIsPublic, setCreateModalIsPublic] = useState(false)
     const [createModalCollectionName, setCreateModalCollectionName] = useState("")
-    const [createModalError, setCreateModalError] = useState("")
     const [myCollections, setMyCollections] = useState([])
     const [publicCollections, setPublicCollections] = useState([])
+    const [selectedCollectionId, setSelectedCollectionId] = useState(null)
+    const [collectionOptionModalVisible, setCollectionOptionModalVisible] = useState(false)
     const { getToken } = useAuth();
 
 
@@ -90,7 +93,8 @@ const StudySpace = () => {
         const fetchMyCollections = async () => {
             const token = await getToken();
             try {
-                const res = await axios.get("http://localhost:8080/collection/mine?page=1", { headers: { Authorization: token } })
+                const cleanBase = API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
+                const res = await axios.get(cleanBase + "collection/mine?page=1", { headers: { Authorization: token } })
                 if (res.data.success) {
                     setMyCollections(res.data.data[0])
                 }
@@ -106,9 +110,10 @@ const StudySpace = () => {
         const fetchPublicCollections = async () => {
             try {
                 const token = await getToken();
-                const res = await axios.get("http://localhost:8080/collection/public?page=1", { headers: { Authorization: token } })
+                const cleanBase = API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
+                const res = await axios.get(cleanBase + "collection/public?page=1", { headers: { Authorization: token } })
                 if (res.data.success) {
-                    setPublicCollections(res.data.data)
+                    setPublicCollections(res.data.data[0])
                 }
             } catch (error) {
                 console.error("Error fetching collection", error)
@@ -120,7 +125,8 @@ const StudySpace = () => {
     const createCollection = async () => {
         try {
             const token = await getToken();
-            const res = await axios.post("http://localhost:8080/collection", { name: createModalCollectionName, visibility: createModalIsPublic ? "public" : "private" }, { headers: { Authorization: token } })
+            const cleanBase = API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
+            const res = await axios.post(cleanBase + "collection", { name: createModalCollectionName, visibility: createModalIsPublic ? "public" : "private" }, { headers: { Authorization: token } })
             if (res.data.success) {
                 setIsCreateCollectionModalVisible(false)
                 setCreateModalCollectionName("")
@@ -132,11 +138,28 @@ const StudySpace = () => {
         }
     }
 
+    const deleteCollection = async () => {
+        try {
+            const token = await getToken();
+            const cleanBase = API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
+            const res = await axios.delete(cleanBase + `collection/${selectedCollectionId}`, { headers: { Authorization: token } })
+            if (res.data.success) {
+                setMyCollections(prev => prev.filter(c => c.id !== selectedCollectionId))
+                setSelectedCollectionId(null)
+                setCollectionOptionModalVisible(false)
+            } else {
+                console.error("Error deleting collection:", res.data.message)
+            }
+        } catch (error) {
+            console.error("Error deleting collection:", error);
+        }
+    }
+
     const filteredMyCollections = myCollections?.filter(c =>
         c.name.toLowerCase().includes(searchQuery.toLowerCase())
     )
 
-    const filteredPublicCollections = mockPublicCollections.filter(c =>
+    const filteredPublicCollections = publicCollections.filter(c =>
         c.name.toLowerCase().includes(searchQuery.toLowerCase())
     )
 
@@ -206,6 +229,16 @@ const StudySpace = () => {
                             <View className='flex-row items-center border-t border-gray-50 pt-2 mt-auto'>
                                 <Ionicons name="time-outline" size={12} color="#9ca3af" />
                                 <Text className='text-[10px] text-gray-400 ml-1 font-medium'>{new Date(item.updatedAt).toLocaleDateString()}</Text>
+                                <Pressable
+                                    onPress={(e) => {
+                                        e.stopPropagation?.();
+                                        setSelectedCollectionId(item.id);
+                                        setCollectionOptionModalVisible(true);
+                                    }}
+                                    className='ml-auto p-1 rounded-full hover:bg-gray-100 active:scale-95 transition-all'
+                                >
+                                    <Ionicons name='ellipsis-vertical' size={16} color="#9ca3af" />
+                                </Pressable>
                             </View>
                         </Pressable>
                     ))}
@@ -228,6 +261,7 @@ const StudySpace = () => {
                 <View className='flex-row flex-wrap gap-4'>
                     {filteredPublicCollections.map((item) => (
                         <Pressable
+                        onPress={()=>router.push(`/study-space/collection/${item.id}`)}
                             key={item.id}
                             className="bg-white p-4 w-[47%] lg:w-[30%] rounded-2xl border border-gray-100 shadow-sm active:scale-[0.98] transition-all"
                         >
@@ -243,16 +277,16 @@ const StudySpace = () => {
                                 {item.name}
                             </Text>
                             <Text className='text-xs text-purple-600 font-semibold mb-2'>
-                                {item.booksCount} books
+                                {item._count.books} books
                             </Text>
                             <View className='flex-row items-center border-t border-gray-50 pt-2 mt-auto'>
                                 <View className='w-5 h-5 rounded-full bg-gray-200 items-center justify-center'>
                                     <Text className='text-[8px] font-bold text-gray-600'>
-                                        {item.authorName.split(' ').map(n => n[0]).join('')}
+                                        {item.owner.firstName.charAt(0) + item.owner.lastName.charAt(0)}
                                     </Text>
                                 </View>
                                 <Text className='text-[10px] text-gray-500 ml-1.5 font-medium' numberOfLines={1}>
-                                    {item.authorName}
+                                    {item.owner.firstName + " " + item.owner.lastName}
                                 </Text>
                             </View>
                         </Pressable>
@@ -288,6 +322,19 @@ const StudySpace = () => {
                         </View>
                     </View>
                 </View>
+            </Modal>
+
+            {/* Collection Option Modal */}
+            <Modal visible={collectionOptionModalVisible} transparent animationType='fade' onRequestClose={() => setCollectionOptionModalVisible(false)}>
+                <Pressable onPress={() => setCollectionOptionModalVisible(false)} className='flex-1 justify-center items-center bg-black/25'>
+                    <Pressable onPress={(e) => e.stopPropagation?.()} className='bg-white flex-col rounded-xl p-4 gap-4 min-w-[300px]'>
+                        <Text className='text-lg font-bold text-center'>Options</Text>
+                        <Pressable onPress={() => deleteCollection()} className='flex-row items-center gap-2 border-b border-gray-100 pb-2'>
+                            <Ionicons name='trash-bin' size={24} color="red" />
+                            <Text className='text-md font-semibold text-red-500'>Delete</Text>
+                        </Pressable>
+                    </Pressable>
+                </Pressable>
             </Modal>
         </ScrollView>
     )

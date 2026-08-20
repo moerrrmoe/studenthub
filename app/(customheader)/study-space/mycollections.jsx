@@ -1,11 +1,53 @@
+import { useAuth } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import axios from 'axios';
 import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080/";
 
 const MyCollections = () => {
     const router = useRouter();
     const [searchQuery, setSearchQuery] = useState("");
+    const [myCollections, setMyCollections] = useState([]);
+    const [selectedCollectionId, setSelectedCollectionId] = useState(null);
+    const [collectionOptionModalVisible, setCollectionOptionModalVisible] = useState(false);
+    const { getToken } = useAuth();
+
+    useEffect(() => {
+        const fetchMyCollections = async () => {
+            const token = await getToken();
+            try {
+                const cleanBase = API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
+                const res = await axios.get(cleanBase + "collection/mine?page=1", { headers: { Authorization: token } })
+                if (res.data.success) {
+                    setMyCollections(res.data.data[0])
+                }
+            } catch (error) {
+                console.error("Error fetching collections:", error);
+            }
+        }
+        fetchMyCollections();
+
+    }, [])
+
+    const deleteCollection = async () => {
+        try {
+            const token = await getToken();
+            const cleanBase = API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
+            const res = await axios.delete(cleanBase + `collection/${selectedCollectionId}`, { headers: { Authorization: token } });
+            if (res.data.success) {
+                setMyCollections(prev => prev.filter(c => c.id !== selectedCollectionId));
+                setSelectedCollectionId(null);
+                setCollectionOptionModalVisible(false);
+            } else {
+                console.error("Error deleting collection:", res.data.message);
+            }
+        } catch (error) {
+            console.error("Error deleting collection:", error);
+        }
+    };
 
     const mockMyCollections = [
         {
@@ -31,7 +73,7 @@ const MyCollections = () => {
         }
     ];
 
-    const filteredCollections = mockMyCollections.filter(c =>
+    const filteredCollections = myCollections?.filter(c =>
         c.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
@@ -76,8 +118,9 @@ const MyCollections = () => {
             {/* Grid List */}
             <View className='px-6 mb-8'>
                 <View className='flex-row flex-wrap gap-4'>
-                    {filteredCollections.map((item) => (
+                    {filteredCollections?.map((item) => (
                         <Pressable
+                            onPress={() => router.push(`/study-space/collection/${item.id}`)}
                             key={item.id}
                             className="bg-white p-4 w-[47%] lg:w-[30%] rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden active:scale-[0.98] transition-all"
                         >
@@ -85,9 +128,9 @@ const MyCollections = () => {
                                 <View className='bg-blue-50 p-2.5 rounded-xl'>
                                     <Ionicons color="#3b82f6" name="folder" size={26} />
                                 </View>
-                                <View className={`px-2 py-0.5 rounded-full ${item.isPublic ? 'bg-green-50' : 'bg-gray-100'}`}>
-                                    <Text className={`text-[10px] font-bold ${item.isPublic ? 'text-green-700' : 'text-gray-600'}`}>
-                                        {item.isPublic ? 'Public' : 'Private'}
+                                <View className={`px-2 py-0.5 rounded-full ${item.visibility == "public" ? 'bg-green-50' : 'bg-gray-100'}`}>
+                                    <Text className={`text-[10px] font-bold ${item.visibility == "public" ? 'text-green-700' : 'text-gray-600'}`}>
+                                        {item.visibility == "public" ? 'Public' : 'Private'}
                                     </Text>
                                 </View>
                             </View>
@@ -95,21 +138,44 @@ const MyCollections = () => {
                                 {item.name}
                             </Text>
                             <Text className='text-xs text-gray-400 font-medium mb-2'>
-                                {item.booksCount} {item.booksCount === 1 ? 'book' : 'books'}
+                                {item._count.books} {item._count.books === 1 ? 'book' : 'books'}
                             </Text>
                             <View className='flex-row items-center border-t border-gray-50 pt-2 mt-auto'>
                                 <Ionicons name="time-outline" size={12} color="#9ca3af" />
-                                <Text className='text-[10px] text-gray-400 ml-1 font-medium'>{item.updatedAt}</Text>
+                                <Text className='text-[10px] text-gray-400 ml-1 font-medium'>{new Date(item.updatedAt).toLocaleDateString()}</Text>
+                                <Pressable
+                                    onPress={(e) => {
+                                        e.stopPropagation?.();
+                                        setSelectedCollectionId(item.id);
+                                        setCollectionOptionModalVisible(true);
+                                    }}
+                                    className='ml-auto p-1 rounded-full hover:bg-gray-100 active:scale-95 transition-all'
+                                >
+                                    <Ionicons name='ellipsis-vertical' size={16} color="#9ca3af" />
+                                </Pressable>
                             </View>
                         </Pressable>
                     ))}
-                    {filteredCollections.length === 0 && (
+                    {filteredCollections?.length === 0 && (
                         <View className='w-full py-12 items-center bg-white rounded-2xl border border-dashed border-gray-200'>
                             <Text className='text-sm text-gray-400'>No collections found</Text>
                         </View>
                     )}
                 </View>
             </View>
+
+            {/* Collection Option Modal */}
+            <Modal visible={collectionOptionModalVisible} transparent animationType='fade' onRequestClose={() => setCollectionOptionModalVisible(false)}>
+                <Pressable onPress={() => setCollectionOptionModalVisible(false)} className='flex-1 justify-center items-center bg-black/25'>
+                    <Pressable onPress={(e) => e.stopPropagation?.()} className='bg-white flex-col rounded-xl p-4 gap-4 min-w-[300px]'>
+                        <Text className='text-lg font-bold text-center'>Options</Text>
+                        <Pressable onPress={() => deleteCollection()} className='flex-row items-center gap-2 border-b border-gray-100 pb-2'>
+                            <Ionicons name='trash-bin' size={24} color="red" />
+                            <Text className='text-md font-semibold text-red-500'>Delete</Text>
+                        </Pressable>
+                    </Pressable>
+                </Pressable>
+            </Modal>
         </ScrollView>
     );
 };

@@ -6,6 +6,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { Button, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080/";
+
 const Collection = () => {
     const router = useRouter()
     const { collection_id } = useLocalSearchParams()
@@ -17,6 +19,8 @@ const Collection = () => {
     const [uploadModalTempUrl, setUploadModalTempUrl] = useState(null)
     const [uploadModalName, setUploadModalName] = useState('')
     const [uploadModalAuthor, setUploadModalAuthor] = useState('')
+    const [selectedBookId, setSelectedBookId] = useState(null)
+    const [bookOptionModalVisible, setBookOptionModalVisible] = useState(false)
 
     const mockBooks = [
         {
@@ -86,7 +90,8 @@ const Collection = () => {
                     type: asset.mimeType
                 })
             }
-            const res = await axios.post(`http://localhost:8080/book/temp/upload?collectionId=${collection_id}`, formData, { headers: { Authorization: token } })
+            const cleanBase = API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
+            const res = await axios.post(cleanBase + `book/temp/upload?collectionId=${collection_id}`, formData, { headers: { Authorization: token } })
             if (res.data.success) {
                 return setUploadModalTempUrl(res.data.data.path)
             }
@@ -99,7 +104,8 @@ const Collection = () => {
     const uploadBook = async () => {
         try {
             const token = await getToken();
-            const res = await axios.post(`http://localhost:8080/book`, {
+            const cleanBase = API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
+            const res = await axios.post(cleanBase + `book`, {
                 name: uploadModalName,
                 author: uploadModalAuthor,
                 tempPath: uploadModalTempUrl,
@@ -119,11 +125,30 @@ const Collection = () => {
         }
     }
 
+    const deleteBook = async () => {
+        try {
+            const token = await getToken();
+            const cleanBase = API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
+            const res = await axios.delete(cleanBase + `book/${selectedBookId}`, { headers: { Authorization: token } })
+            if (res.data.success) {
+                setCollection({ ...collection, books: collection.books.filter(book => book.id !== selectedBookId) })
+                setSelectedBookId(null)
+                setBookOptionModalVisible(false)
+            }
+            return console.error("Error deleting book:", res.data.message)
+        }
+        catch (error) {
+            console.error("Error deleting book:", error)
+        }
+    }
+
+
     useEffect(() => {
         const fetchCollection = async () => {
             try {
                 const token = await getToken();
-                const res = await axios.get(`http://localhost:8080/collection/${collection_id}`, { headers: { Authorization: token } })
+                const cleanBase = API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
+                const res = await axios.get(cleanBase + `collection/${collection_id}`, { headers: { Authorization: token } })
                 if (res.data.success) {
                     setCollection(res.data.data)
                 } else {
@@ -198,7 +223,11 @@ const Collection = () => {
                 <View className='flex-row flex-wrap gap-4'>
                     {filteredBooks?.map((item) => (
                         <Pressable
-                            onPress={() => router.push(`/study-space/book/${item.id}?pdfUrl=${encodeURIComponent(`http://localhost:8080/${item.fileLocation}`)}`)}
+                            onPress={() => {
+                                const cleanBase = API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
+                                const cleanFileLoc = item.fileLocation.startsWith("/") ? item.fileLocation.slice(1) : item.fileLocation;
+                                router.push(`/study-space/book/${item.id}?pdfUrl=${encodeURIComponent(cleanBase + cleanFileLoc)}`);
+                            }}
                             key={item.id}
                             className="bg-white p-4 w-[47%] lg:w-[19%] rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden active:scale-[0.98] transition-all"
                         >
@@ -219,7 +248,7 @@ const Collection = () => {
                                     <Ionicons name="time-outline" size={12} color="#9ca3af" />
                                     <Text className='text-[10px] text-gray-400 ml-1 font-medium'>{new Date(item.updatedAt).toDateString()}</Text>
                                 </View>
-                                <Pressable className='p-1 rounded-full bg-gray-50 hover:bg-gray-100'>
+                                <Pressable onPress={(e) => { e.stopPropagation?.(); setBookOptionModalVisible(true); setSelectedBookId(item.id); }} className='p-1 rounded-full bg-gray-50 hover:bg-gray-100 active:scale-95 transition-all'>
                                     <Ionicons name="ellipsis-vertical" size={14} color="#6b7280" />
                                 </Pressable>
                             </View>
@@ -265,6 +294,19 @@ const Collection = () => {
                         </View>
                     </View>
                 </View>
+            </Modal>
+
+            {/* Book Options */}
+            <Modal visible={bookOptionModalVisible} transparent animationType='fade' onRequestClose={() => setBookOptionModalVisible(false)}>
+                <Pressable onPress={() => setBookOptionModalVisible(false)} className='flex-1 justify-center items-center bg-black/25'>
+                    <Pressable onPress={(e) => e.stopPropagation?.()} className='bg-white flex-col rounded-xl p-4 gap-4 min-w-[300px]'>
+                        <Text className='text-lg font-bold text-center'>Options</Text>
+                        <Pressable onPress={() => deleteBook()} className='flex-row items-center gap-2 border-b border-gray-100 pb-2'>
+                            <Ionicons name='trash-bin' size={24} color="red" />
+                            <Text className='text-md font-semibold text-red-500'>Delete</Text>
+                        </Pressable>
+                    </Pressable>
+                </Pressable>
             </Modal>
         </ScrollView>
     )

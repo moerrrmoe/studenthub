@@ -14,6 +14,7 @@ export default function TabsLayout() {
           <Stack>
             <Stack.Screen name="home" options={{ headerShown: false }} />
             <Stack.Screen name="profile" options={{ headerShown: false }} />
+            <Stack.Screen name="search" options={{ headerShown: false }} />
           </Stack>
         </View>
       </View>

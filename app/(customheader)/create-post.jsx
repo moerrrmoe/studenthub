@@ -7,6 +7,8 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080/";
+
 const CreatePost = () => {
     const { user } = useUser();
 
@@ -17,7 +19,8 @@ const CreatePost = () => {
 
     const createPost = async () => {
         try {
-            const res = await axios.post('http://localhost:8080/post', {
+            const cleanBase = API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
+            const res = await axios.post(cleanBase + 'post', {
                 authorId: user.id,
                 title,
                 content: {
@@ -65,7 +68,8 @@ const CreatePost = () => {
             })
         }
         try {
-            const res = await axios.post('http://localhost:8080/image/temp/upload', formData)
+            const cleanBase = API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
+            const res = await axios.post(cleanBase + 'image/temp/upload', formData)
             if (res.data.success) {
                 setImages(prev => ([...prev, ...res.data.data.files.map(file => file.path)]))
                 setPreviewImages(prev => ([...prev, ...assets.map(asset => asset.uri)]))

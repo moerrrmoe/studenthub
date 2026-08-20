@@ -61,10 +61,10 @@ const ImageCarousel = ({ images }) => {
             <View
               key={index}
               style={{ width }}
-              className="h-[400px] justify-center items-center bg-black"
+              className="h-[400px] justify-center items-center bg-gray-100"
             >
               <Image
-                source={image.includes('http') ? image : 'http://localhost:8080/' + image}
+                source={image.includes('http') ? image : 'http://localhost:8080/' + (image.startsWith('/') ? image.slice(1) : image)}
                 contentFit="cover"
                 className="w-full h-full"
               />
