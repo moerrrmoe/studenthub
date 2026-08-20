@@ -6,9 +6,10 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { Button, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080/";
+import { useApiConfig } from "@/contexts/ApiConfigContext";
 
 const Collection = () => {
+    const { getCleanUrl } = useApiConfig();
     const router = useRouter()
     const { collection_id } = useLocalSearchParams()
     const [searchQuery, setSearchQuery] = useState("")
@@ -90,8 +91,7 @@ const Collection = () => {
                     type: asset.mimeType
                 })
             }
-            const cleanBase = API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
-            const res = await axios.post(cleanBase + `book/temp/upload?collectionId=${collection_id}`, formData, { headers: { Authorization: token } })
+            const res = await axios.post(getCleanUrl(`book/temp/upload?collectionId=${collection_id}`), formData, { headers: { Authorization: token } })
             if (res.data.success) {
                 return setUploadModalTempUrl(res.data.data.path)
             }
@@ -104,8 +104,7 @@ const Collection = () => {
     const uploadBook = async () => {
         try {
             const token = await getToken();
-            const cleanBase = API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
-            const res = await axios.post(cleanBase + `book`, {
+            const res = await axios.post(getCleanUrl(`book`), {
                 name: uploadModalName,
                 author: uploadModalAuthor,
                 tempPath: uploadModalTempUrl,
@@ -128,8 +127,7 @@ const Collection = () => {
     const deleteBook = async () => {
         try {
             const token = await getToken();
-            const cleanBase = API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
-            const res = await axios.delete(cleanBase + `book/${selectedBookId}`, { headers: { Authorization: token } })
+            const res = await axios.delete(getCleanUrl(`book/${selectedBookId}`), { headers: { Authorization: token } })
             if (res.data.success) {
                 setCollection({ ...collection, books: collection.books.filter(book => book.id !== selectedBookId) })
                 setSelectedBookId(null)
@@ -147,8 +145,7 @@ const Collection = () => {
         const fetchCollection = async () => {
             try {
                 const token = await getToken();
-                const cleanBase = API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
-                const res = await axios.get(cleanBase + `collection/${collection_id}`, { headers: { Authorization: token } })
+                const res = await axios.get(getCleanUrl(`collection/${collection_id}`), { headers: { Authorization: token } })
                 if (res.data.success) {
                     setCollection(res.data.data)
                 } else {

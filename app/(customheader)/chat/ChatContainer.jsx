@@ -22,7 +22,7 @@ import FloatingActionButton from "../../../components/floating-action-button";
 import ChatList from "../chat-list";
 import AiChat from "./ai-chat";
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080/";
+import { useApiConfig } from "@/contexts/ApiConfigContext";
 
 const EMOJI_CATEGORIES = {
   smileys: ["😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇", "🙂", "🙃", "😉", "😌", "😍", "🥰", "😘", "😗", "😙", "😚", "😋", "😛", "😝", "😜", "🤪", "🤨", "🧐", "🤓", "😎", "🤩", "🥳", "😏", "😒", "😞", "😔", "😟", "😕", "🙁", "☹️", "😣", "😖", "😫", "😩", "🥺", "😢", "😭", "😤", "😠", "😡", "🤬", "🤯", "😳", "🥵", "🥶", "😱", "😨", "😰", "😥", "😓", "🤗", "🤔", "🤭", "🤫", "🤥", "😶", "😐", "😑", "😬", "🙄", "😯", "😦", "😧", "😮", "😲", "🥱", "😴", "🤤", "😪", "😵", "🤐", "🥴", "🤢", "🤮", "🤧", "😷", "🤒", "🤕", "🤠", "😈", "👿", "👹", "👺", "💩", "👻", "💀", "👽", "👾", "🤖"],
@@ -31,6 +31,7 @@ const EMOJI_CATEGORIES = {
 };
 
 const ChatContainer = ({ chatId }) => {
+  const { getCleanUrl } = useApiConfig();
   const router = useRouter();
   const { getToken } = useAuth();
   const { user } = useUser();
@@ -71,13 +72,6 @@ const ChatContainer = ({ chatId }) => {
 
   const isChatSelected = !!chatId;
 
-  const getCleanUrl = (endpoint) => {
-    const cleanBase = API_BASE_URL.endsWith("/")
-      ? API_BASE_URL
-      : `${API_BASE_URL}/`;
-    return `${cleanBase}${endpoint}`;
-  };
-
   const getFallbackAvatar = (label = "U") => {
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(
       label
@@ -93,12 +87,7 @@ const ChatContainer = ({ chatId }) => {
           : ((name || "U").trim().charAt(0).toUpperCase() || "U");
       return getFallbackAvatar(fallbackLabel);
     }
-    if (normalizedAvatar.startsWith("http")) return normalizedAvatar;
-    const cleanBase = API_BASE_URL.endsWith("/")
-      ? API_BASE_URL.slice(0, -1)
-      : API_BASE_URL;
-    const cleanPath = normalizedAvatar.startsWith("/") ? normalizedAvatar : `/${normalizedAvatar}`;
-    return `${cleanBase}${cleanPath}`;
+    return getCleanUrl(normalizedAvatar);
   };
 
   const fetchMessages = async (page = 1, append = false) => {
@@ -185,7 +174,7 @@ const ChatContainer = ({ chatId }) => {
     if (chatId == 'ai') return setUninvitedFollowers([]);
     try {
       const token = await getToken();
-      const response = await axios.get(`http://localhost:8080/chat/${chatId}/uninvited-followers`, {
+      const response = await axios.get(getCleanUrl(`chat/${chatId}/uninvited-followers`), {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -210,7 +199,7 @@ const ChatContainer = ({ chatId }) => {
     if (seenByArray.some((s) => s.userId === user?.id)) return console.log('already read', message.id);
     try {
       const token = await getToken();
-      const res = await axios.post(`${API_BASE_URL}message/read`, {
+      const res = await axios.post(getCleanUrl("message/read"), {
         messageId: message.id,
         userId: user?.id
       }, {
@@ -286,7 +275,7 @@ const ChatContainer = ({ chatId }) => {
   const createGroupChat = async () => {
     try {
       const token = await getToken();
-      const res = await axios.post('http://localhost:8080/chat/group', {
+      const res = await axios.post(getCleanUrl('chat/group'), {
         name: chatCreateModalChatName,
         members: [user?.id]
       }, {
@@ -311,7 +300,7 @@ const ChatContainer = ({ chatId }) => {
   const leaveChat = async () => {
     try {
       const token = await getToken();
-      const res = await axios.delete(`http://localhost:8080/chat/leave/${chatId}`, {
+      const res = await axios.delete(getCleanUrl(`chat/leave/${chatId}`), {
         headers: {
           Authorization: `Bearer ${token}`
         },
@@ -346,7 +335,7 @@ const ChatContainer = ({ chatId }) => {
       await Promise.all(
         selectedUninvitedFollowers.map((followerId) =>
           axios.post(
-            "http://localhost:8080/chat/member",
+            getCleanUrl("chat/member"),
             {
               chatId: chatId,
               userId: followerId,
@@ -382,7 +371,15 @@ const ChatContainer = ({ chatId }) => {
           }`}
       >
         {!isMe && chatType == 'group' && (
-          <Image className={"w-8 h-8 mr-2 rounded-full border border-blue-500 shrink-0"} source={{ uri: "http://localhost:8080" + chatDetails?.members?.find((member) => member.userId == item.senderId)?.user?.profile?.avatar }} />
+          <Image
+            className={"w-8 h-8 mr-2 rounded-full border border-blue-500 shrink-0"}
+            source={{
+              uri: getAvatarUrl(
+                chatDetails?.members?.find((member) => member.userId == item.senderId)?.user?.profile?.avatar,
+                chatDetails?.members?.find((member) => member.userId == item.senderId)?.user?.firstName
+              )
+            }}
+          />
         )}
         <View className={`rounded-2xl px-4 py-2.5 my-1 shrink ${isMe ? "bg-blue-600 rounded-tr-sm" : "bg-white border border-gray-100 rounded-tl-sm"}`}>
           <Text className={`text-sm leading-5 ${isMe ? "text-white" : "text-gray-800"}`}>
@@ -396,7 +393,15 @@ const ChatContainer = ({ chatId }) => {
 
         </View>
         {isMe && chatType == 'group' && (
-          <Image source={{ uri: "http://localhost:8080" + chatDetails?.members?.find((member) => member.userId == item.senderId)?.user?.profile?.avatar }} className="w-8 h-8 ml-2 rounded-full border-2 border-blue-500 shrink-0" />
+          <Image
+            source={{
+              uri: getAvatarUrl(
+                chatDetails?.members?.find((member) => member.userId == item.senderId)?.user?.profile?.avatar,
+                chatDetails?.members?.find((member) => member.userId == item.senderId)?.user?.firstName
+              )
+            }}
+            className="w-8 h-8 ml-2 rounded-full border-2 border-blue-500 shrink-0"
+          />
         )}
       </View>
     );

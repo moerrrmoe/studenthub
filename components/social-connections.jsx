@@ -7,6 +7,8 @@ import * as Linking from "expo-linking";
 import React from "react";
 import { router } from "expo-router";
 
+import { useApiConfig } from "@/contexts/ApiConfigContext";
+
 WebBrowser.maybeCompleteAuthSession();
 
 const SOCIAL_CONNECTION_STRATEGIES = [
@@ -29,6 +31,7 @@ const SOCIAL_CONNECTION_STRATEGIES = [
 
 function SocialButton({ strategy }) {
   const { startOAuthFlow } = useOAuth({ strategy: strategy.type });
+  const { getCleanUrl } = useApiConfig();
 
   const onPress = React.useCallback(async () => {
     try {
@@ -40,11 +43,7 @@ function SocialButton({ strategy }) {
       if (createdSessionId) {
         // If the sign-up object exists and has a user ID, register them in the backend
         if (signUp && signUp.createdUserId) {
-          const apiUrl =
-            process.env.EXPO_PUBLIC_API_URL || "http://localhost:8000/";
-          const registerUrl = apiUrl.endsWith("/")
-            ? `${apiUrl}user/register`
-            : `${apiUrl}/user/register`;
+          const registerUrl = getCleanUrl("user/register");
 
           const response = await fetch(registerUrl, {
             method: "POST",

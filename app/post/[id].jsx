@@ -7,9 +7,10 @@ import { useLocalSearchParams } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080/";
+import { useApiConfig } from "@/contexts/ApiConfigContext";
 
 const Post = () => {
+    const { getCleanUrl } = useApiConfig();
     const { id } = useLocalSearchParams()
     const [post, setPost] = useState()
     const [isLoading, setIsLoading] = useState(true)
@@ -22,8 +23,7 @@ const Post = () => {
         if (!id) return;
         const getPost = async () => {
             try {
-                const cleanBase = API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
-                const res = await axios.get(cleanBase + 'post/' + id)
+                const res = await axios.get(getCleanUrl('post/' + id))
                 if (res.data.success) {
                     setPost(res.data.data)
                 } else {
@@ -66,16 +66,15 @@ const Post = () => {
     const handleNewComment = async (text) => {
         if (!text || text.trim().length === 0) return;
         try {
-            const cleanBase = API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
             if (toReply) {
-                const res = await axios.post(cleanBase + 'comment/' + toReply + '/reply', { content: text, authorId: user.id, postId: post.id })
+                const res = await axios.post(getCleanUrl('comment/' + toReply + '/reply'), { content: text, authorId: user.id, postId: post.id })
                 if (res.data.success) {
                     setPost(prev => ({ ...prev, comments: prev.comments.map(c => c.id === toReply ? { ...c, replies: [...c.replies, res.data.data] } : c) }))
                 } else {
                     console.error('Failed to add reply:', res.data.message)
                 }
             } else {
-                const res = await axios.post(cleanBase + 'comment', { content: text, authorId: user.id, postId: post.id })
+                const res = await axios.post(getCleanUrl('comment'), { content: text, authorId: user.id, postId: post.id })
                 if (res.data.success) {
                     const newComment = {
                         ...res.data.data,

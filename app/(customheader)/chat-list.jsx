@@ -15,7 +15,7 @@ import {
   View,
 } from "react-native";
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080/";
+import { useApiConfig } from "@/contexts/ApiConfigContext";
 
 let cachedConversations = [];
 let isInitialFetched = false;
@@ -31,6 +31,7 @@ const ChatList = ({
   refreshTrigger = null,
   onCreateChat,
 }) => {
+  const { getCleanUrl } = useApiConfig();
   const [conversations, setConversations] = useState(cachedConversations);
   const [paginationMeta, setPaginationMeta] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -41,13 +42,6 @@ const ChatList = ({
   getTokenRef.current = getToken;
 
   const isFetchingConversationsRef = useRef(false);
-
-  const getCleanUrl = (endpoint) => {
-    const cleanBase = API_BASE_URL.endsWith("/")
-      ? API_BASE_URL
-      : `${API_BASE_URL}/`;
-    return `${cleanBase}${endpoint}`;
-  };
 
   const getFallbackAvatar = (label = "U") => {
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(
@@ -64,12 +58,7 @@ const ChatList = ({
           : ((name || "U").trim().charAt(0).toUpperCase() || "U");
       return getFallbackAvatar(fallbackLabel);
     }
-    if (normalizedAvatar.startsWith("http")) return normalizedAvatar;
-    const cleanBase = API_BASE_URL.endsWith("/")
-      ? API_BASE_URL.slice(0, -1)
-      : API_BASE_URL;
-    const cleanPath = normalizedAvatar.startsWith("/") ? normalizedAvatar : `/${normalizedAvatar}`;
-    return `${cleanBase}${cleanPath}`;
+    return getCleanUrl(normalizedAvatar);
   };
 
   const fetchConversations = useCallback(

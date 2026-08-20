@@ -3,7 +3,10 @@ import { Image } from "expo-image";
 import { useRef, useState } from "react";
 import { Platform, Pressable, ScrollView, View } from "react-native";
 
+import { useApiConfig } from "@/contexts/ApiConfigContext";
+
 const ImageCarousel = ({ images }) => {
+  const { getCleanUrl } = useApiConfig();
   const [activeIndex, setActiveIndex] = useState(0);
   const [width, setWidth] = useState(0);
   const scrollViewRef = useRef(null);
@@ -64,7 +67,7 @@ const ImageCarousel = ({ images }) => {
               className="h-[400px] justify-center items-center bg-gray-100"
             >
               <Image
-                source={image.includes('http') ? image : 'http://localhost:8080/' + (image.startsWith('/') ? image.slice(1) : image)}
+                source={{ uri: getCleanUrl(image) }}
                 contentFit="cover"
                 className="w-full h-full"
               />

@@ -39,9 +39,10 @@ const MessageItem = memo(({ item }) => {
     );
 });
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080/";
+import { useApiConfig } from "@/contexts/ApiConfigContext";
 
 export default function Book() {
+    const { getCleanUrl } = useApiConfig();
     const { book_id, pdfUrl } = useLocalSearchParams();
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
@@ -95,8 +96,7 @@ export default function Book() {
         const fetchMessages = async () => {
             try {
                 const token = await getToken();
-                const cleanBase = API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
-                const res = await axios.get(cleanBase + `ai/book-chat?userId=${user?.id}&bookId=${book_id}&page=1&bookPage=${currentPage}`, {
+                const res = await axios.get(getCleanUrl(`ai/book-chat?userId=${user?.id}&bookId=${book_id}&page=1&bookPage=${currentPage}`), {
                     headers: {
                         Authorization: `Bearer ${token}`
                     }
@@ -120,8 +120,7 @@ export default function Book() {
         setInputMessage('');
         try {
             const token = await getToken();
-            const cleanBase = API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
-            const res = await axios.post(cleanBase + 'ai/book-message', {
+            const res = await axios.post(getCleanUrl('ai/book-message'), {
                 userId: user?.id,
                 bookId: book_id,
                 page: currentPage,

@@ -6,7 +6,6 @@ import { router, usePathname } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Modal, Pressable, ScrollView, Text, View, TextInput } from "react-native";
 import SearchInput from "./SearchInput";
-import { API_BASE_URL } from "@/lib/api";
 import { useApiConfig } from "@/contexts/ApiConfigContext";
 
 const MOBILE_NAV_ITEMS = [
@@ -78,7 +77,7 @@ const Header = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [dbUser, setDbUser] = useState(null);
 
-  const { apiUrl, updateApiUrl, resetToDefault } = useApiConfig();
+  const { apiUrl, updateApiUrl, resetToDefault, getCleanUrl } = useApiConfig();
   const [isDevModalOpen, setIsDevModalOpen] = useState(false);
   const [inputUrl, setInputUrl] = useState(apiUrl);
 
@@ -91,10 +90,7 @@ const Header = () => {
       }
 
       try {
-        const cleanBase = API_BASE_URL.endsWith("/")
-          ? API_BASE_URL
-          : `${API_BASE_URL}/`;
-        const res = await axios.get(`${cleanBase}user/${user.id}`);
+        const res = await axios.get(getCleanUrl(`user/${user.id}`));
         if (res.data?.success) {
           setDbUser(res.data.data);
           setIsAdmin(res.data.data.role === "admin");
@@ -130,12 +126,7 @@ const Header = () => {
 
   const getAvatarUrl = (avatarPath) => {
     if (!avatarPath) return null;
-    if (avatarPath.startsWith("http")) return avatarPath;
-    const cleanBase = API_BASE_URL.endsWith("/")
-      ? API_BASE_URL.slice(0, -1)
-      : API_BASE_URL;
-    const cleanPath = avatarPath.startsWith("/") ? avatarPath : `/${avatarPath}`;
-    return `${cleanBase}${cleanPath}`;
+    return getCleanUrl(avatarPath);
   };
 
   const avatarUrl = dbUser?.profile?.avatar

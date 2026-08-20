@@ -6,9 +6,10 @@ import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import axios from 'axios';
 import { router } from 'expo-router';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080/";
+import { useApiConfig } from "@/contexts/ApiConfigContext";
 
 const PublicCollections = () => {
+    const { getCleanUrl } = useApiConfig();
     const router = useRouter();
     const [searchQuery, setSearchQuery] = useState("");
     const [publicCollections, setPublicCollections] = useState([]);
@@ -67,8 +68,7 @@ const PublicCollections = () => {
         const fetchPublicCollections = async () => {
             try {
                 const token = await getToken();
-                const cleanBase = API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
-                const res = await axios.get(cleanBase + "collection/public?page=1", { headers: { Authorization: token } })
+                const res = await axios.get(getCleanUrl("collection/public?page=1"), { headers: { Authorization: token } })
                 if (res.data.success) {
                     setPublicCollections(res.data.data[0])
                 }

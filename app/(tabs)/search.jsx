@@ -15,7 +15,7 @@ import {
   View,
 } from "react-native";
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080/";
+import { useApiConfig } from "@/contexts/ApiConfigContext";
 
 const POPULAR_TAGS = [
   "All",
@@ -28,6 +28,7 @@ const POPULAR_TAGS = [
 ];
 
 export default function SearchScreen() {
+  const { getCleanUrl } = useApiConfig();
   const params = useLocalSearchParams();
   const activeQuery = (params.query || params.q || "").toString().trim();
   const { user } = useUser();
@@ -55,13 +56,6 @@ export default function SearchScreen() {
 
   const flatListRef = useRef(null);
 
-  const getCleanUrl = (endpoint) => {
-    const cleanBase = API_BASE_URL.endsWith("/")
-      ? API_BASE_URL
-      : `${API_BASE_URL}/`;
-    return `${cleanBase}${endpoint}`;
-  };
-
   const getFallbackAvatar = (label = "U") => {
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(
       label
@@ -77,12 +71,7 @@ export default function SearchScreen() {
           : ((name || "U").trim().charAt(0).toUpperCase() || "U");
       return getFallbackAvatar(fallbackLabel);
     }
-    if (normalizedAvatar.startsWith("http")) return normalizedAvatar;
-    const cleanBase = API_BASE_URL.endsWith("/")
-      ? API_BASE_URL.slice(0, -1)
-      : API_BASE_URL;
-    const cleanPath = normalizedAvatar.startsWith("/") ? normalizedAvatar : `/${normalizedAvatar}`;
-    return `${cleanBase}${cleanPath}`;
+    return getCleanUrl(normalizedAvatar);
   };
 
   // Fetch Posts

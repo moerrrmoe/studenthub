@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { TextInput, View } from "react-native";
 import axios from "axios";
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080/";
+import { useApiConfig } from "@/contexts/ApiConfigContext";
 
 const getFallbackAvatar = (label = "U") => {
   const svg = `
@@ -18,6 +18,7 @@ const getFallbackAvatar = (label = "U") => {
 };
 
 const CreatePostInput = () => {
+  const { getCleanUrl } = useApiConfig();
   const { user, isLoaded } = useUser()
   const [dbUser, setDbUser] = useState(null)
 
@@ -25,10 +26,7 @@ const CreatePostInput = () => {
     const fetchDbUser = async () => {
       if (!user?.id) return;
       try {
-        const cleanBase = API_BASE_URL.endsWith("/")
-          ? API_BASE_URL
-          : `${API_BASE_URL}/`;
-        const res = await axios.get(`${cleanBase}user/${user.id}`);
+        const res = await axios.get(getCleanUrl(`user/${user.id}`));
         if (res.data?.success) {
           setDbUser(res.data.data);
         }
@@ -43,12 +41,7 @@ const CreatePostInput = () => {
 
   const getAvatarUrl = (avatarPath) => {
     if (!avatarPath) return null;
-    if (avatarPath.startsWith("http")) return avatarPath;
-    const cleanBase = API_BASE_URL.endsWith("/")
-      ? API_BASE_URL.slice(0, -1)
-      : API_BASE_URL;
-    const cleanPath = avatarPath.startsWith("/") ? avatarPath : `/${avatarPath}`;
-    return `${cleanBase}${cleanPath}`;
+    return getCleanUrl(avatarPath);
   };
 
   const avatarSource = dbUser?.profile?.avatar

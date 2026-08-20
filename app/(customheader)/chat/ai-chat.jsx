@@ -13,7 +13,7 @@ import {
   View,
 } from "react-native";
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080/";
+import { useApiConfig } from "@/contexts/ApiConfigContext";
 
 const MessageItem = memo(({ item }) => {
   const markdownStyle = {
@@ -47,6 +47,7 @@ const MessageItem = memo(({ item }) => {
 MessageItem.displayName = "MessageItem";
 
 const AiChat = () => {
+  const { getCleanUrl } = useApiConfig();
   const { getToken } = useAuth();
   const getTokenRef = useRef(getToken);
   getTokenRef.current = getToken;
@@ -60,13 +61,6 @@ const AiChat = () => {
   const router = useRouter();
 
   const isFetchingRef = useRef(false);
-
-  const getCleanUrl = (endpoint) => {
-    const cleanBase = API_BASE_URL.endsWith("/")
-      ? API_BASE_URL
-      : `${API_BASE_URL}/`;
-    return `${cleanBase}${endpoint}`;
-  };
 
   const getOldMessages = useCallback(
     async (page = 1, append = false) => {

@@ -5,9 +5,10 @@ import { useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { Button, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080/";
+import { useApiConfig } from "@/contexts/ApiConfigContext";
 
 const StudySpace = () => {
+    const { getCleanUrl } = useApiConfig();
     const router = useRouter()
     const [searchQuery, setSearchQuery] = useState("")
     const [isCreateCollectionModalVisible, setIsCreateCollectionModalVisible] = useState(false)
@@ -93,8 +94,7 @@ const StudySpace = () => {
         const fetchMyCollections = async () => {
             const token = await getToken();
             try {
-                const cleanBase = API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
-                const res = await axios.get(cleanBase + "collection/mine?page=1", { headers: { Authorization: token } })
+                const res = await axios.get(getCleanUrl("collection/mine?page=1"), { headers: { Authorization: token } })
                 if (res.data.success) {
                     setMyCollections(res.data.data[0])
                 }
@@ -110,8 +110,7 @@ const StudySpace = () => {
         const fetchPublicCollections = async () => {
             try {
                 const token = await getToken();
-                const cleanBase = API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
-                const res = await axios.get(cleanBase + "collection/public?page=1", { headers: { Authorization: token } })
+                const res = await axios.get(getCleanUrl("collection/public?page=1"), { headers: { Authorization: token } })
                 if (res.data.success) {
                     setPublicCollections(res.data.data[0])
                 }
@@ -125,8 +124,7 @@ const StudySpace = () => {
     const createCollection = async () => {
         try {
             const token = await getToken();
-            const cleanBase = API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
-            const res = await axios.post(cleanBase + "collection", { name: createModalCollectionName, visibility: createModalIsPublic ? "public" : "private" }, { headers: { Authorization: token } })
+            const res = await axios.post(getCleanUrl("collection"), { name: createModalCollectionName, visibility: createModalIsPublic ? "public" : "private" }, { headers: { Authorization: token } })
             if (res.data.success) {
                 setIsCreateCollectionModalVisible(false)
                 setCreateModalCollectionName("")
@@ -141,8 +139,7 @@ const StudySpace = () => {
     const deleteCollection = async () => {
         try {
             const token = await getToken();
-            const cleanBase = API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
-            const res = await axios.delete(cleanBase + `collection/${selectedCollectionId}`, { headers: { Authorization: token } })
+            const res = await axios.delete(getCleanUrl(`collection/${selectedCollectionId}`), { headers: { Authorization: token } })
             if (res.data.success) {
                 setMyCollections(prev => prev.filter(c => c.id !== selectedCollectionId))
                 setSelectedCollectionId(null)

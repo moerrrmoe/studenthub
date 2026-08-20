@@ -5,7 +5,7 @@ import { router, usePathname } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080/";
+import { useApiConfig } from "@/contexts/ApiConfigContext";
 
 const NAV_ITEMS = [
   {
@@ -59,6 +59,7 @@ const NAV_ITEMS = [
 ];
 
 const SidebarDock = ({ collapsed = false }) => {
+  const { getCleanUrl } = useApiConfig();
   const { user } = useUser();
   const { signOut } = useAuth();
   const [active, setActive] = useState("home");
@@ -77,10 +78,7 @@ const SidebarDock = ({ collapsed = false }) => {
       }
 
       try {
-        const cleanBase = API_BASE_URL.endsWith("/")
-          ? API_BASE_URL
-          : `${API_BASE_URL}/`;
-        const res = await axios.get(`${cleanBase}user/${user.id}`);
+        const res = await axios.get(getCleanUrl(`user/${user.id}`));
         setIsAdmin(res.data?.data?.role === "admin");
       } catch (error) {
         console.error("Error fetching current user role:", error);

@@ -4,13 +4,15 @@ import { Image } from 'expo-image'
 import { useState } from 'react'
 import { Pressable, Text, View } from 'react-native'
 
+import { useApiConfig } from '@/contexts/ApiConfigContext'
+
 const getFallbackAvatar = (label = "U") => {
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(
         label
     )}&background=E5E7EB&color=374151&size=200&rounded=true`
 };
 
-const getAvatarUrl = (author) => {
+const getAvatarUrl = (author, getCleanUrl) => {
     const avatar = author?.profile?.avatar || author?.avatarUrl
     const normalizedAvatar = typeof avatar === "string" ? avatar.trim() : avatar
     if (!normalizedAvatar) {
@@ -18,11 +20,11 @@ const getAvatarUrl = (author) => {
         return getFallbackAvatar((name || "U").charAt(0).toUpperCase() || "U")
     }
     if (normalizedAvatar.startsWith("http")) return normalizedAvatar
-    const cleanPath = normalizedAvatar.startsWith("/") ? normalizedAvatar : `/${normalizedAvatar}`
-    return `http://localhost:8080${cleanPath}`
+    return getCleanUrl(normalizedAvatar)
 }
 
 const Comment = ({ comment, setToReply, currentUser }) => {
+    const { getCleanUrl } = useApiConfig()
     const [showReplies, setShowReplies] = useState(false)
     const [isLiked, setIsLiked] = useState(
         comment.likes?.some((like) => like.userId === currentUser?.id) || false
@@ -32,7 +34,7 @@ const Comment = ({ comment, setToReply, currentUser }) => {
     const handleLikeComment = async () => {
         if (!currentUser?.id) return
         try {
-            const res = await axios.post(`http://localhost:8080/comment/${comment.id}/like`, {
+            const res = await axios.post(getCleanUrl(`comment/${comment.id}/like`), {
                 userId: currentUser.id,
             })
             if (res.data.success) {
@@ -49,7 +51,7 @@ const Comment = ({ comment, setToReply, currentUser }) => {
             <View key={comment.id} className='border-b border-gray-100 py-3 px-1'>
                 <View className="flex flex-row gap-3 items-start">
                     <Image
-                        source={{ uri: getAvatarUrl(comment.author) }}
+                        source={{ uri: getAvatarUrl(comment.author, getCleanUrl) }}
                         className="w-[36px] h-[36px] rounded-full bg-gray-100"
                     />
                     <View className="flex flex-col flex-1">
@@ -92,6 +94,7 @@ const Comment = ({ comment, setToReply, currentUser }) => {
 }
 
 const ReplyItem = ({ reply, currentUser }) => {
+    const { getCleanUrl } = useApiConfig()
     const [isLiked, setIsLiked] = useState(
         reply.likes?.some((like) => like.userId === currentUser?.id) || false
     )
@@ -104,8 +107,8 @@ const ReplyItem = ({ reply, currentUser }) => {
             // we'll track optimistically and use create/delete based on state
             // For now, the backend CommentReplyLike just creates — we toggle optimistically
             const endpoint = isLiked
-                ? `http://localhost:8080/comment/reply/${reply.id}/unlike`
-                : `http://localhost:8080/comment/reply/${reply.id}/like`
+                ? getCleanUrl(`comment/reply/${reply.id}/unlike`)
+                : getCleanUrl(`comment/reply/${reply.id}/like`)
             const res = await axios.post(endpoint, {
                 commentReplyId: reply.id,
                 userId: currentUser.id,
@@ -123,7 +126,7 @@ const ReplyItem = ({ reply, currentUser }) => {
         <View className='py-2.5'>
             <View className="flex flex-row gap-3 items-start">
                 <Image
-                    source={{ uri: getAvatarUrl(reply.author) }}
+                    source={{ uri: getAvatarUrl(reply.author, getCleanUrl) }}
                     className="w-[30px] h-[30px] rounded-full bg-gray-100"
                 />
                 <View className="flex flex-col flex-1">

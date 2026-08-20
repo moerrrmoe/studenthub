@@ -17,9 +17,10 @@ import {
   View,
 } from "react-native";
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080/";
+import { useApiConfig } from "@/contexts/ApiConfigContext";
 
 const Profile = () => {
+  const { getCleanUrl } = useApiConfig();
   const { user, isLoaded } = useUser();
   const { getToken } = useAuth();
   const { id } = useLocalSearchParams();
@@ -42,13 +43,6 @@ const Profile = () => {
   const [editProfileBio, setEditProfileBio] = useState("");
   const [editProfileAvatar, setEditProfileAvatar] = useState(null);
 
-  const getCleanUrl = (endpoint) => {
-    const cleanBase = API_BASE_URL.endsWith("/")
-      ? API_BASE_URL
-      : `${API_BASE_URL}/`;
-    return `${cleanBase}${endpoint}`;
-  };
-
   const getFallbackAvatar = (label = "U") => {
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(
       label
@@ -64,12 +58,7 @@ const Profile = () => {
           : ((name || "U").trim().charAt(0).toUpperCase() || "U");
       return getFallbackAvatar(fallbackLabel);
     }
-    if (normalizedAvatar.startsWith("http")) return normalizedAvatar;
-    const cleanBase = API_BASE_URL.endsWith("/")
-      ? API_BASE_URL.slice(0, -1)
-      : API_BASE_URL;
-    const cleanPath = normalizedAvatar.startsWith("/") ? normalizedAvatar : `/${normalizedAvatar}`;
-    return `${cleanBase}${cleanPath}`;
+    return getCleanUrl(normalizedAvatar);
   };
 
   const fetchUserData = useCallback(async () => {

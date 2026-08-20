@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import { LayoutAnimation, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import ImageCarousel from "./image-carousel";
 import { Card, CardContent, CardFooter, CardHeader } from "./ui/card";
-
+import { useApiConfig } from "@/contexts/ApiConfigContext";
 
 const markdownStyles = {
   body: {
@@ -122,6 +122,7 @@ const PostCard = ({
   ]);
   const [isAIExplainPressed, setIsAIExplainPressed] = useState(false);
   const { user } = useUser()
+  const { getCleanUrl } = useApiConfig();
   const [inputText, setInputText] = useState("");
   const [isLiked, setIsLiked] = useState(false);
   const [isDisliked, setIsDisliked] = useState(false);
@@ -173,7 +174,7 @@ const PostCard = ({
     if (aiConversation.length === 1) {
       try {
         setIsAiReasoning(true);
-        const res = await axios.post("http://localhost:8080/ai/post-explain", { id: postId, role: "user", content: `post-title:${postTitle} \n post-body:${postBody}`, messages: aiConversation });
+        const res = await axios.post(getCleanUrl("ai/post-explain"), { id: postId, role: "user", content: `post-title:${postTitle} \n post-body:${postBody}`, messages: aiConversation });
         console.log(res.data);
         setAiConversation(prev => [...prev, { role: "assistant", content: res.data.data }]);
       } finally {
@@ -187,8 +188,8 @@ const PostCard = ({
     if (!user?.id) return;
     try {
       const endpoint = isLiked
-        ? `http://localhost:8080/post/${postId}/unlike`
-        : `http://localhost:8080/post/${postId}/like`;
+        ? getCleanUrl(`post/${postId}/unlike`)
+        : getCleanUrl(`post/${postId}/like`);
       const res = await axios.post(endpoint, { userId: user.id })
       if (res.data.success) {
         setLikesCount(prev => isLiked ? prev - 1 : prev + 1);
@@ -206,7 +207,7 @@ const PostCard = ({
   const handleDislike = async () => {
     if (!user?.id) return;
     try {
-      const res = await axios.post(`http://localhost:8080/post/${postId}/dislike`, { userId: user.id })
+      const res = await axios.post(getCleanUrl(`post/${postId}/dislike`), { userId: user.id })
       if (res.data.success) {
         setIsDisliked(!isDisliked);
         // If disliking, remove like (mutual exclusion)
@@ -227,7 +228,7 @@ const PostCard = ({
     setShouldScroll(true);
     try {
       setIsAiReasoning(true);
-      const res = await axios.post("http://localhost:8080/ai/post-explain", { id: postId, role: "user", content: inputText, messages: aiConversation });
+      const res = await axios.post(getCleanUrl("ai/post-explain"), { id: postId, role: "user", content: inputText, messages: aiConversation });
       setAiConversation(prev => [...prev, { role: "assistant", content: res.data.data }]);
     } finally {
       setIsAiReasoning(false);

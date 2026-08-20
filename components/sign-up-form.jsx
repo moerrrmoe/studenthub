@@ -17,8 +17,11 @@ import { Pressable, View, Alert } from "react-native";
 import { useSignUp } from "@clerk/expo/legacy";
 import { router } from "expo-router";
 
+import { useApiConfig } from "@/contexts/ApiConfigContext";
+
 export function SignUpForm() {
   const { signUp, setActive, isLoaded } = useSignUp();
+  const { getCleanUrl } = useApiConfig();
   const lastNameInputRef = React.useRef(null);
   const emailInputRef = React.useRef(null);
   const passwordInputRef = React.useRef(null);
@@ -53,11 +56,7 @@ export function SignUpForm() {
       });
 
       if (signUpAttempt.status === "complete") {
-        const apiUrl =
-          process.env.EXPO_PUBLIC_API_URL || "http://localhost:8000/";
-        const registerUrl = apiUrl.endsWith("/")
-          ? `${apiUrl}user/register`
-          : `${apiUrl}/user/register`;
+        const registerUrl = getCleanUrl("user/register");
 
         const response = await fetch(registerUrl, {
           method: "POST",

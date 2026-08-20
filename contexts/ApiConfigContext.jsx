@@ -29,8 +29,16 @@ export const ApiConfigProvider = ({ children }) => {
     resetSocket();
   };
 
+  const getCleanUrl = (endpoint) => {
+    if (!endpoint) return apiUrl;
+    if (typeof endpoint === 'string' && (endpoint.startsWith('http://') || endpoint.startsWith('https://'))) return endpoint;
+    const cleanBase = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    return `${cleanBase}${cleanEndpoint}`;
+  };
+
   return (
-    <ApiConfigContext.Provider value={{ apiUrl, updateApiUrl, resetToDefault, isInitialized }}>
+    <ApiConfigContext.Provider value={{ apiUrl, updateApiUrl, resetToDefault, isInitialized, getCleanUrl }}>
       {children}
     </ApiConfigContext.Provider>
   );

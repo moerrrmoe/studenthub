@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Alert, FlatList, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, ActivityIndicator } from 'react-native'
 import * as DocumentPicker from "expo-document-picker";
 import { Image } from 'expo-image';
+import { useApiConfig } from '@/contexts/ApiConfigContext';
 
 // Lightweight custom Select — uses Modal to avoid all zIndex issues on web & native
 const AppSelect = ({ items, placeholder, value, onValueChange }) => {
@@ -61,6 +62,7 @@ const AppSelect = ({ items, placeholder, value, onValueChange }) => {
 }
 
 const Dashboard = () => {
+    const { getCleanUrl } = useApiConfig();
     // --- States ---
     const [feedIntegrations, setFeedIntegrations] = useState([])
     const [providers, setProviders] = useState([])
@@ -86,9 +88,7 @@ const Dashboard = () => {
 
     const getAvatarUrl = (avatar) => {
         if (!avatar) return null;
-        if (avatar.startsWith("http")) return avatar;
-        const cleanPath = avatar.startsWith("/") ? avatar : `/${avatar}`;
-        return `http://localhost:8080${cleanPath}`;
+        return getCleanUrl(avatar);
     };
 
     const pickImage = async () => {
@@ -116,7 +116,7 @@ const Dashboard = () => {
             });
         }
         try {
-            const res = await axios.post("http://localhost:8080/image/temp/upload", formData);
+            const res = await axios.post(getCleanUrl("image/temp/upload"), formData);
             if (res.data?.success) {
                 setModalAvatar(res.data.data.files[0].path);
             }
@@ -134,9 +134,9 @@ const Dashboard = () => {
 
         const fetchAdminDashboardData = async () => {
             try {
-                const feedIntegrationsRes = await axios.get(`http://localhost:8080/feed/integration/all`)
-                const feedProvidersRes = await axios.get(`http://localhost:8080/feed/provider/all`)
-                const feedAccountsRes = await axios.get(`http://localhost:8080/feed/account/all`)
+                const feedIntegrationsRes = await axios.get(getCleanUrl("feed/integration/all"))
+                const feedProvidersRes = await axios.get(getCleanUrl("feed/provider/all"))
+                const feedAccountsRes = await axios.get(getCleanUrl("feed/account/all"))
                 const [feedIntegrations, feedProviders, feedAccounts] = await Promise.all([feedIntegrationsRes, feedProvidersRes, feedAccountsRes])
                 console.log(feedIntegrations.data.data)
                 setFeedIntegrations(feedIntegrations.data.data)
@@ -200,7 +200,7 @@ const Dashboard = () => {
     const handleDeleteIntegration = (id) => {
         const performDelete = async () => {
             try {
-                const res = await axios.delete(`http://localhost:8080/feed/integration/${id}`)
+                const res = await axios.delete(getCleanUrl(`feed/integration/${id}`))
                 if (res.data.success) {
                     setFeedIntegrations(prev => prev.filter(item => item.id !== id))
                 }
@@ -238,7 +238,7 @@ const Dashboard = () => {
 
         if (selectedIntegration.id === 'new') {
             try {
-                const res = await axios.post("http://localhost:8080/feed/integration", {
+                const res = await axios.post(getCleanUrl("feed/integration"), {
                     providerId: modalIntegrationProvider.value,
                     userId: String(modalIntegrationUser.value),
                     tag: String(modalIntegrationTag) || null
@@ -254,7 +254,7 @@ const Dashboard = () => {
             }
         } else {
             try {
-                const res = await axios.put(`http://localhost:8080/feed/integration/${selectedIntegration.id}`, {
+                const res = await axios.put(getCleanUrl(`feed/integration/${selectedIntegration.id}`), {
                     providerId: modalIntegrationProvider.value,
                     userId: String(modalIntegrationUser.value),
                     tag: String(modalIntegrationTag)
@@ -282,7 +282,7 @@ const Dashboard = () => {
                 }
                 return item
             }))
-            const res = await axios.post(`http://localhost:8080/feed/integration/${id}/start`)
+            const res = await axios.post(getCleanUrl(`feed/integration/${id}/start`))
             if (res.data.success) {
                 setFeedIntegrations(prev => prev.map(item => {
                     if (item.id === id) {
@@ -311,7 +311,7 @@ const Dashboard = () => {
 
     const handleStopTask = async (id) => {
         try {
-            const res = await axios.post(`http://localhost:8080/feed/integration/${id}/stop`)
+            const res = await axios.post(getCleanUrl(`feed/integration/${id}/stop`))
             if (res.data.success) {
                 setFeedIntegrations(prev => prev.map(item => {
                     if (item.id === id) {
@@ -335,7 +335,7 @@ const Dashboard = () => {
     const handleDeleteProvider = (id) => {
         const performDelete = async () => {
             try {
-                const res = await axios.delete(`http://localhost:8080/feed/provider/${id}`)
+                const res = await axios.delete(getCleanUrl(`feed/provider/${id}`))
                 if (res.data.success) {
                     setProviders(prev => prev.filter(item => item.id !== id))
                     setFeedIntegrations(prev => prev.filter(f => f.providerId !== id && f.provider?.id !== id))
@@ -375,7 +375,7 @@ const Dashboard = () => {
 
         if (selectedProvider.id === 'new') {
             try {
-                const res = await axios.post('http://localhost:8080/feed/provider', {
+                const res = await axios.post(getCleanUrl('feed/provider'), {
                     name: modalProviderName,
                     url: modalProviderBaseUrl
                 })
@@ -391,7 +391,7 @@ const Dashboard = () => {
             }
         } else {
             try {
-                const res = await axios.put(`http://localhost:8080/feed/provider/${selectedProvider.id}`, {
+                const res = await axios.put(getCleanUrl(`feed/provider/${selectedProvider.id}`), {
                     name: modalProviderName,
                     url: modalProviderBaseUrl
                 })
@@ -422,7 +422,7 @@ const Dashboard = () => {
     const handleDeleteUser = (id) => {
         const performDelete = async () => {
             try {
-                const res = await axios.delete(`http://localhost:8080/user/${id}`)
+                const res = await axios.delete(getCleanUrl(`user/${id}`))
                 if (res.data.success) {
                     setAutomatedUsers(prev => prev.filter(item => item.id !== id))
                     setFeedIntegrations(prev => prev.filter(f => f.userId !== id && f.user?.id !== id))
@@ -462,7 +462,7 @@ const Dashboard = () => {
 
         if (selectedUser.id === 'new') {
             try {
-                const res = await axios.post('http://localhost:8080/feed/account', {
+                const res = await axios.post(getCleanUrl('feed/account'), {
                     email: String(modalFirstName + modalLastName).toLowerCase().replace(/\s+/g, '') + "@studenthub.com",
                     firstName: modalFirstName,
                     lastName: modalLastName,
@@ -478,7 +478,7 @@ const Dashboard = () => {
             }
         } else {
             try {
-                const res = await axios.put(`http://localhost:8080/user/${selectedUser.id}`, {
+                const res = await axios.put(getCleanUrl(`user/${selectedUser.id}`), {
                     firstName: modalFirstName,
                     lastName: modalLastName,
                     bio: modalBio,

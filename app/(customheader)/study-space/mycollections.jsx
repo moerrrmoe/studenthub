@@ -5,9 +5,10 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080/";
+import { useApiConfig } from "@/contexts/ApiConfigContext";
 
 const MyCollections = () => {
+    const { getCleanUrl } = useApiConfig();
     const router = useRouter();
     const [searchQuery, setSearchQuery] = useState("");
     const [myCollections, setMyCollections] = useState([]);
@@ -19,8 +20,7 @@ const MyCollections = () => {
         const fetchMyCollections = async () => {
             const token = await getToken();
             try {
-                const cleanBase = API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
-                const res = await axios.get(cleanBase + "collection/mine?page=1", { headers: { Authorization: token } })
+                const res = await axios.get(getCleanUrl("collection/mine?page=1"), { headers: { Authorization: token } })
                 if (res.data.success) {
                     setMyCollections(res.data.data[0])
                 }
@@ -35,8 +35,7 @@ const MyCollections = () => {
     const deleteCollection = async () => {
         try {
             const token = await getToken();
-            const cleanBase = API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
-            const res = await axios.delete(cleanBase + `collection/${selectedCollectionId}`, { headers: { Authorization: token } });
+            const res = await axios.delete(getCleanUrl(`collection/${selectedCollectionId}`), { headers: { Authorization: token } });
             if (res.data.success) {
                 setMyCollections(prev => prev.filter(c => c.id !== selectedCollectionId));
                 setSelectedCollectionId(null);
