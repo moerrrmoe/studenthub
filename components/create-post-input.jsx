@@ -49,7 +49,7 @@ const CreatePostInput = () => {
     : (user?.imageUrl || getFallbackAvatar(fallbackLabel));
 
   return (
-    <View className="w-full max-w-[700px] flex-row self-center p-4 bg-white rounded-xl mt-3 border border-gray-200">
+    <View className="w-full max-w-[700px] flex-row self-center p-4 bg-white dark:bg-slate-900 rounded-xl mt-3 border border-gray-200 dark:border-slate-800">
       <View className="w-[50px] items-center justify-center mr-3">
         <Image source={avatarSource} className="w-[42px] h-[42px] rounded-full" />
       </View>
@@ -58,7 +58,7 @@ const CreatePostInput = () => {
           onFocus={() => (router.push('/create-post'))}
           placeholderTextColor="#9ca3af"
           placeholder="What's on your mind?"
-          className="w-full rounded-full bg-gray-100 px-4 py-2.5 text-sm text-gray-800"
+          className="w-full rounded-full bg-gray-100 dark:bg-slate-800 px-4 py-2.5 text-sm text-gray-800 dark:text-slate-200"
         />
       </View>
     </View>

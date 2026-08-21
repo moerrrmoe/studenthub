@@ -122,11 +122,11 @@ const Home = () => {
   const renderEmptyComponent = useCallback(() => {
     if (isLoading) return null;
     return (
-      <View className="w-full max-w-[700px] self-center bg-white rounded-2xl p-8 items-center justify-center my-4 shadow-sm border border-gray-100">
-        <View className="w-16 h-16 bg-blue-50 rounded-full items-center justify-center mb-4">
-          <Ionicons name="newspaper-outline" size={32} color="#2563eb" />
+      <View className="w-full max-w-[700px] self-center bg-white dark:bg-slate-900 rounded-2xl p-8 items-center justify-center my-4 shadow-sm border border-gray-100 dark:border-slate-800">
+        <View className="w-16 h-16 bg-violet-50 rounded-full items-center justify-center mb-4">
+          <Ionicons name="newspaper-outline" size={32} color="#7c3aed" />
         </View>
-        <Text className="text-base font-bold text-gray-900 mb-2">No Posts Yet</Text>
+        <Text className="text-base font-bold text-gray-900 dark:text-white mb-2">No Posts Yet</Text>
         <Text className="text-sm text-gray-400 text-center max-w-[320px]">
           {"Follow other students or write your first post to see what's happening around campus!"}
         </Text>
@@ -320,7 +320,7 @@ const Home = () => {
     if (isLoadingMore) {
       return (
         <View className="py-6 items-center justify-center">
-          <ActivityIndicator size="small" color="#2563eb" />
+          <ActivityIndicator size="small" color="#7c3aed" />
           <Text className="text-xs text-gray-400 mt-2 font-medium">
             Loading more posts...
           </Text>
@@ -344,9 +344,9 @@ const Home = () => {
 
   if (isLoading && !isRefreshing && posts.length === 0) {
     return (
-      <View className="flex-1 w-full items-center justify-center bg-[#f5f6f8]">
-        <ActivityIndicator size="large" color="#2563eb" />
-        <Text className="text-xs text-gray-400 mt-3 font-medium">
+      <View className="flex-1 w-full items-center justify-center bg-[#f5f6f8] dark:bg-slate-950">
+        <ActivityIndicator size="large" color="#7c3aed" />
+        <Text className="text-xs text-gray-400 dark:text-gray-500 mt-3 font-medium">
           Loading your feed...
         </Text>
       </View>
@@ -355,19 +355,19 @@ const Home = () => {
 
   if (error && posts.length === 0) {
     return (
-      <View className="flex-1 w-full items-center justify-center bg-[#f5f6f8] px-6">
-        <View className="w-14 h-14 rounded-full bg-red-50 items-center justify-center mb-3">
+      <View className="flex-1 w-full items-center justify-center bg-[#f5f6f8] dark:bg-slate-950 px-6">
+        <View className="w-14 h-14 rounded-full bg-red-50 dark:bg-red-950/20 items-center justify-center mb-3">
           <Ionicons name="alert-circle-outline" size={28} color="#ef4444" />
         </View>
-        <Text className="text-base font-semibold text-gray-900 mb-1">
+        <Text className="text-base font-semibold text-gray-900 dark:text-white mb-1">
           Unable to load feed
         </Text>
-        <Text className="text-xs text-gray-500 text-center mb-4 leading-5">
+        <Text className="text-xs text-gray-500 dark:text-gray-400 text-center mb-4 leading-5">
           {error}
         </Text>
         <Pressable
           onPress={() => getFeed(1, false)}
-          className="flex-row items-center gap-2 bg-blue-600 px-5 py-2.5 rounded-full active:bg-blue-700"
+          className="flex-row items-center gap-2 bg-violet-600 px-5 py-2.5 rounded-full active:bg-violet-700"
         >
           <Ionicons name="refresh" size={16} color="white" />
           <Text className="text-xs font-semibold text-white">Retry</Text>
@@ -377,7 +377,7 @@ const Home = () => {
   }
 
   return (
-    <View className="flex-1 w-full items-center bg-[#f5f6f8]">
+    <View className="flex-1 w-full items-center bg-[#f5f6f8] dark:bg-slate-950">
       <FlatList
         data={posts}
         keyExtractor={(item, index) =>
@@ -397,9 +397,9 @@ const Home = () => {
           <View className="w-full items-center">
             <CreatePostInput />
             {suggestions && suggestions.length > 0 && (
-              <View className="w-full max-w-[700px] bg-white rounded-2xl p-4 mt-4 my-2 shadow-sm">
+              <View className="w-full max-w-[700px] bg-white dark:bg-slate-900 rounded-2xl p-4 mt-4 my-2 shadow-sm">
                 <View className="flex-row justify-between items-center mb-3 px-1">
-                  <Text className="text-sm font-bold text-gray-900">People you might know</Text>
+                  <Text className="text-sm font-bold text-gray-900 dark:text-white">People you might know</Text>
                   <Ionicons name="people-outline" size={18} color="#4b5563" />
                 </View>
                 <ScrollView
@@ -414,7 +414,7 @@ const Home = () => {
                       <Pressable
                         key={item.id}
                         onPress={() => router.push(`/profile/${item.id}`)}
-                        className="bg-gray-50 border border-gray-100 rounded-xl p-3 items-center w-[120px]"
+                        className="bg-gray-50 dark:bg-slate-950 border border-gray-100 dark:border-slate-800 rounded-xl p-3 items-center w-[120px]"
                       >
                         <Image
                           source={{
@@ -426,7 +426,7 @@ const Home = () => {
                           }}
                           className="w-12 h-12 rounded-full mb-2"
                         />
-                        <Text className="text-xs font-semibold text-gray-800 text-center mb-1 w-full" numberOfLines={1}>
+                        <Text className="text-xs font-semibold text-gray-800 dark:text-slate-200 text-center mb-1 w-full" numberOfLines={1}>
                           {`${item.firstName} ${item.lastName || ""}`.trim()}
                         </Text>
                         <Text className="text-[10px] text-gray-400 text-center mb-3 w-full" numberOfLines={1}>
@@ -442,13 +442,13 @@ const Home = () => {
                             "px-3 py-1.5 rounded-full w-full items-center",
                             isFollowed
                               ? "bg-gray-200"
-                              : "bg-blue-600 active:bg-blue-700",
+                              : "bg-violet-600 active:bg-violet-700",
                           ].join(" ")}
                         >
                           <Text
                             className={[
                               "text-[10px] font-bold",
-                              isFollowed ? "text-gray-700" : "text-white",
+                              isFollowed ? "text-gray-700 dark:text-slate-300" : "text-white",
                             ].join(" ")}
                           >
                             {isFollowed ? "Following" : "Follow"}
@@ -467,8 +467,8 @@ const Home = () => {
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={handleRefresh}
-            colors={["#2563eb"]}
-            tintColor="#2563eb"
+            colors={["#7c3aed"]}
+            tintColor="#7c3aed"
           />
         }
         onEndReached={handleLoadMore}
@@ -483,11 +483,11 @@ const Home = () => {
         onRequestClose={() => { }}
       >
         <View className="flex-1 bg-black/60 justify-center items-center px-4">
-          <View className="bg-white rounded-3xl p-6 w-full max-w-[420px] shadow-2xl items-center">
-            <View className="w-16 h-16 bg-blue-50 rounded-full items-center justify-center mb-4">
-              <Ionicons name="sparkles" size={32} color="#2563eb" />
+          <View className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-[420px] shadow-2xl items-center">
+            <View className="w-16 h-16 bg-violet-50 rounded-full items-center justify-center mb-4">
+              <Ionicons name="sparkles" size={32} color="#7c3aed" />
             </View>
-            <Text className="text-xl font-bold text-gray-900 text-center mb-2">
+            <Text className="text-xl font-bold text-gray-900 dark:text-white text-center mb-2">
               Welcome to StudentHub!
             </Text>
             <Text className="text-xs text-gray-500 text-center mb-6 px-2">
@@ -506,12 +506,12 @@ const Home = () => {
                       key={topic.id}
                       onPress={() => toggleTopicSelection(topic.id)}
                       className={`px-4 py-2 rounded-full border ${isSelected
-                        ? "bg-blue-600 border-blue-600"
-                        : "bg-gray-50 border-gray-200 active:bg-gray-100"
+                        ? "bg-violet-600 border-violet-600"
+                        : "bg-gray-50 dark:bg-slate-950 border-gray-200 dark:border-slate-800 active:bg-gray-100 dark:bg-slate-800"
                         }`}
                     >
                       <Text
-                        className={`text-xs font-medium ${isSelected ? "text-white" : "text-gray-700"
+                        className={`text-xs font-medium ${isSelected ? "text-white" : "text-gray-700 dark:text-slate-300"
                           }`}
                       >
                         {topic.name}
@@ -527,7 +527,7 @@ const Home = () => {
               disabled={selectedTopics.length === 0 || isSubmittingInterests}
               className={`w-full py-3.5 rounded-xl items-center justify-center ${selectedTopics.length === 0
                 ? "bg-gray-200"
-                : "bg-blue-600 active:bg-blue-700"
+                : "bg-violet-600 active:bg-violet-700"
                 }`}
             >
               {isSubmittingInterests ? (

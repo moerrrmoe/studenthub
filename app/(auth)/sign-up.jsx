@@ -4,9 +4,9 @@ import { ScrollView, View } from "react-native";
 
 function SignUp() {
   return (
-    <View className="flex-1 bg-slate-50 relative">
+    <View className="flex-1 bg-slate-50 dark:bg-slate-950 relative">
       {/* Decorative ambient background blur lights */}
-      <View className="absolute -top-24 -right-24 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl" />
+      <View className="absolute -top-24 -right-24 w-96 h-96 bg-violet-400/10 rounded-full blur-3xl" />
       <View className="absolute bottom-10 left-10 w-80 h-80 bg-indigo-400/10 rounded-full blur-3xl" />
 
       <ScrollView

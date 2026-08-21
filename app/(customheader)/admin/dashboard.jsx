@@ -1,22 +1,29 @@
-import { Ionicons } from '@expo/vector-icons'
-import axios from 'axios'
-import { useEffect, useState } from 'react'
-import { Alert, FlatList, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, ActivityIndicator } from 'react-native'
+import { useApiConfig } from '@/contexts/ApiConfigContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
 import * as DocumentPicker from "expo-document-picker";
 import { Image } from 'expo-image';
-import { useApiConfig } from '@/contexts/ApiConfigContext';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 // Lightweight custom Select — uses Modal to avoid all zIndex issues on web & native
-const AppSelect = ({ items, placeholder, value, onValueChange }) => {
+const AppSelect = ({ items, placeholder, value, onValueChange, isDarkMode }) => {
     const [open, setOpen] = useState(false)
 
     return (
         <>
-            <Pressable style={styles.trigger} onPress={() => setOpen(true)}>
-                <Text style={[styles.triggerText, !value && styles.triggerPlaceholder]}>
+            <Pressable
+                style={[
+                    styles.trigger,
+                    isDarkMode && styles.triggerDark,
+                ]}
+                onPress={() => setOpen(true)}
+            >
+                <Text style={[styles.triggerText, !value && styles.triggerPlaceholder, isDarkMode && styles.triggerTextDark, !value && isDarkMode && styles.triggerPlaceholderDark]}>
                     {value ? value.label : placeholder}
                 </Text>
-                <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={16} color='#64748b' />
+                <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={16} color={isDarkMode ? '#cbd5e1' : '#64748b'} />
             </Pressable>
 
             <Modal
@@ -26,11 +33,11 @@ const AppSelect = ({ items, placeholder, value, onValueChange }) => {
                 onRequestClose={() => setOpen(false)}
             >
                 <Pressable style={styles.pickerOverlay} onPress={() => setOpen(false)}>
-                    <View style={styles.pickerSheet}>
-                        <View style={styles.pickerHeader}>
-                            <Text style={styles.pickerTitle}>{placeholder}</Text>
+                    <View style={[styles.pickerSheet, isDarkMode && styles.pickerSheetDark]}>
+                        <View style={[styles.pickerHeader, isDarkMode && styles.pickerHeaderDark]}>
+                            <Text style={[styles.pickerTitle, isDarkMode && styles.pickerTitleDark]}>{placeholder}</Text>
                             <Pressable onPress={() => setOpen(false)} style={styles.pickerClose}>
-                                <Ionicons name='close' size={20} color='#64748b' />
+                                <Ionicons name='close' size={20} color={isDarkMode ? '#cbd5e1' : '#64748b'} />
                             </Pressable>
                         </View>
                         <FlatList
@@ -40,13 +47,17 @@ const AppSelect = ({ items, placeholder, value, onValueChange }) => {
                                 const isSelected = value?.value === item.value
                                 return (
                                     <Pressable
-                                        style={[styles.pickerItem, isSelected && styles.pickerItemActive]}
+                                        style={[
+                                            styles.pickerItem,
+                                            isDarkMode && styles.pickerItemDark,
+                                            isSelected && (isDarkMode ? styles.pickerItemActiveDark : styles.pickerItemActive),
+                                        ]}
                                         onPress={() => {
                                             onValueChange(item)
                                             setOpen(false)
                                         }}
                                     >
-                                        <Text style={[styles.pickerItemText, isSelected && styles.pickerItemTextActive]}>
+                                        <Text style={[styles.pickerItemText, isDarkMode && styles.pickerItemTextDark, isSelected && styles.pickerItemTextActive]}>
                                             {item.label}
                                         </Text>
                                         {isSelected && <Ionicons name='checkmark' size={16} color='#6366f1' />}
@@ -63,6 +74,7 @@ const AppSelect = ({ items, placeholder, value, onValueChange }) => {
 
 const Dashboard = () => {
     const { getCleanUrl } = useApiConfig();
+    const { isDarkMode } = useTheme();
     // --- States ---
     const [feedIntegrations, setFeedIntegrations] = useState([])
     const [providers, setProviders] = useState([])
@@ -490,15 +502,15 @@ const Dashboard = () => {
                     ))
                     setFeedIntegrations(prev => prev.map(f =>
                         f.userId === selectedUser.id || f.user?.id === selectedUser.id
-                            ? { 
-                                ...f, 
-                                user: { 
-                                    ...f.user, 
-                                    firstName: res.data.data.firstName, 
+                            ? {
+                                ...f,
+                                user: {
+                                    ...f.user,
+                                    firstName: res.data.data.firstName,
                                     lastName: res.data.data.lastName,
                                     profile: res.data.data.profile
-                                } 
-                              }
+                                }
+                            }
                             : f
                     ))
                 }
@@ -513,36 +525,36 @@ const Dashboard = () => {
     const userItems = automatedUsers.map(u => ({ value: u.id, label: (u.firstName && u.lastName) ? (u.firstName + ' ' + u.lastName) : (u.name || u.id) }))
 
     return (
-        <ScrollView className='flex-1 bg-[#f5f6f8]' contentContainerStyle={{ padding: 24, gap: 24 }}>
+        <ScrollView className='flex-1 bg-[#f5f6f8] dark:bg-slate-950' contentContainerStyle={{ padding: 24, gap: 24 }}>
             {/* Header */}
             <View className='flex-row justify-between items-center'>
                 <View>
-                    <Text className='text-2xl font-bold text-slate-800'>Admin Dashboard</Text>
-                    <Text className='text-sm text-slate-500 mt-1'>Manage your platform and system configurations</Text>
+                    <Text className='text-2xl dark:text-white font-bold text-slate-800'>Admin Dashboard</Text>
+                    <Text className='text-sm dark:text-slate-300 text-slate-500 mt-1'>Manage your platform and system configurations</Text>
                 </View>
             </View>
 
             {/* Analytics Card */}
-            <View className='w-full bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex-row items-center gap-4'>
-                <View className='w-12 h-12 rounded-xl bg-violet-50 items-center justify-center'>
+            <View className='w-full bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 shadow-sm flex-row items-center gap-4'>
+                <View className='w-12 h-12 rounded-xl bg-violet-50 dark:bg-violet-950/40 items-center justify-center'>
                     <Ionicons name='analytics' size={24} color='#6366f1' />
                 </View>
                 <View>
-                    <Text className='text-xs font-semibold text-slate-400 uppercase tracking-wider'>System Status</Text>
-                    <Text className='text-lg font-bold text-slate-800'>All services running normally</Text>
+                    <Text className='text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider'>System Status</Text>
+                    <Text className='text-lg font-bold text-slate-800 dark:text-slate-100'>All services running normally</Text>
                 </View>
             </View>
 
             {/* Feed Integrations Section */}
-            <View className='w-full bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex-col'>
-                <View className='flex-row items-center justify-between mb-4 pb-3 border-b border-slate-100'>
+            <View className='w-full bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 shadow-sm flex-col'>
+                <View className='flex-row items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-slate-800'>
                     <View className='flex-row items-center gap-2'>
-                        <Ionicons name='git-merge-outline' size={20} color='#475569' />
-                        <Text className='font-bold text-lg text-slate-800'>Feed Integrations</Text>
+                        <Ionicons name='git-merge-outline' size={20} color={isDarkMode ? '#cbd5e1' : '#475569'} />
+                        <Text className='font-bold text-lg text-slate-800 dark:text-slate-100'>Feed Integrations</Text>
                     </View>
                     <View className='flex-row items-center gap-3'>
-                        <View className='bg-slate-100 px-2.5 py-1 rounded-full'>
-                            <Text className='text-xs font-semibold text-slate-600'>{feedIntegrations.length} Active</Text>
+                        <View className='bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full'>
+                            <Text className='text-xs font-semibold text-slate-600 dark:text-slate-300'>{feedIntegrations.length} Active</Text>
                         </View>
                         <Pressable
                             className='flex-row items-center gap-1 bg-indigo-600 px-3 py-1.5 rounded-lg active:bg-indigo-700'
@@ -562,50 +574,50 @@ const Dashboard = () => {
                 ) : (
                     <View className='gap-3'>
                         {feedIntegrations.map((feedIntegration) => (
-                            <View key={feedIntegration.id} className='w-full flex-row items-center justify-between border border-slate-100 rounded-xl p-4 bg-slate-50/50'>
+                            <View key={feedIntegration.id} className='w-full flex-row items-center justify-between border border-slate-100 dark:border-slate-800 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-950/40'>
                                 <View className='flex-row items-center gap-4 flex-1'>
-                                    <View className='w-10 h-10 rounded-lg bg-slate-200/60 items-center justify-center'>
-                                        <Ionicons name='logo-rss' size={20} color='#475569' />
+                                    <View className='w-10 h-10 rounded-lg bg-slate-200/60 dark:bg-slate-800 items-center justify-center'>
+                                        <Ionicons name='logo-rss' size={20} color={isDarkMode ? '#cbd5e1' : '#475569'} />
                                     </View>
                                     <View className='flex-1 gap-0.5'>
                                         <View className='flex-row items-center gap-2'>
                                             <View className='flex-col pb-2'>
-                                                <Text className='font-semibold text-slate-800 text-base'>{feedIntegration.provider.name} </Text>
-                                                <Text className='text-slate-500 text-[10px]'>[{feedIntegration.tag}]</Text>
+                                                <Text className='font-semibold text-slate-800 dark:text-slate-100 text-base'>{feedIntegration.provider.name} </Text>
+                                                <Text className='text-slate-500 dark:text-slate-400 text-[10px]'>[{feedIntegration.tag}]</Text>
                                             </View>
-                                            <View className='bg-slate-200 px-1.5 py-0.5 rounded'>
-                                                <Text className='text-[10px] font-bold text-slate-600'>ID: {feedIntegration.id}</Text>
+                                            <View className='bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded'>
+                                                <Text className='text-[10px] font-bold text-slate-600 dark:text-slate-300'>ID: {feedIntegration.id}</Text>
                                             </View>
                                         </View>
                                         <View className='flex-row items-center gap-1'>
-                                            <Ionicons name='person-outline' size={12} color='#64748b' />
-                                            <Text className='text-xs text-slate-500'>{feedIntegration.user.firstName + ' ' + feedIntegration.user.lastName}</Text>
+                                            <Ionicons name='person-outline' size={12} color={isDarkMode ? '#cbd5e1' : '#64748b'} />
+                                            <Text className='text-xs text-slate-500 dark:text-slate-400'>{feedIntegration.user.firstName + ' ' + feedIntegration.user.lastName}</Text>
                                         </View>
                                     </View>
                                 </View>
                                 <View className='flex-col items-center gap-2'>
                                     <Pressable
-                                        className='h-8 px-3 rounded-lg border border-slate-200 bg-white items-center justify-center flex-row gap-1 active:bg-slate-50'
+                                        className='h-8 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 items-center justify-center flex-row gap-1 active:bg-slate-50 dark:active:bg-slate-800'
                                         onPress={() => handleEditIntegration(feedIntegration.id)}
                                     >
-                                        <Ionicons name='create-outline' size={14} color='#475569' />
-                                        <Text className='text-xs font-medium text-slate-700'>Edit</Text>
+                                        <Ionicons name='create-outline' size={14} color={isDarkMode ? '#cbd5e1' : '#475569'} />
+                                        <Text className='text-xs font-medium text-slate-700 dark:text-slate-200'>Edit</Text>
                                     </Pressable>
                                     {
                                         feedIntegration?.taskStatus === 'initializing' ? (
-                                            <View className='h-8 px-3 rounded-lg border border-slate-200 bg-slate-50 items-center justify-center flex-row gap-1'>
-                                                <ActivityIndicator size='small' color='#64748b' />
-                                                <Text className='text-xs text-slate-500 font-medium'>Starting...</Text>
+                                            <View className='h-8 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 items-center justify-center flex-row gap-1'>
+                                                <ActivityIndicator size='small' color={isDarkMode ? '#cbd5e1' : '#64748b'} />
+                                                <Text className='text-xs text-slate-500 dark:text-slate-300 font-medium'>Starting...</Text>
                                             </View>
                                         ) : feedIntegration?.taskStatus === 'scheduled' ? (
-                                            <Pressable onPress={() => handleStopTask(feedIntegration.id)} className='h-8 px-3 rounded-lg border border-slate-200 bg-white items-center justify-center flex-row gap-1 active:bg-slate-50' >
+                                            <Pressable onPress={() => handleStopTask(feedIntegration.id)} className='h-8 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 items-center justify-center flex-row gap-1 active:bg-slate-50 dark:active:bg-slate-800' >
                                                 <Ionicons name='pause-outline' size={14} color='#dc2626' />
-                                                <Text className='text-xs font-medium text-slate-700'>Stop</Text>
+                                                <Text className='text-xs font-medium text-slate-700 dark:text-slate-200'>Stop</Text>
                                             </Pressable>
                                         ) : (
-                                            <Pressable onPress={() => handleStartTask(feedIntegration.id)} className='h-8 px-3 rounded-lg border border-slate-200 bg-white items-center justify-center flex-row gap-1 active:bg-slate-50'>
+                                            <Pressable onPress={() => handleStartTask(feedIntegration.id)} className='h-8 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 items-center justify-center flex-row gap-1 active:bg-slate-50 dark:active:bg-slate-800'>
                                                 <Ionicons name='play-outline' size={14} color='#22c55e' />
-                                                <Text className='text-xs font-medium text-slate-700'>Start</Text>
+                                                <Text className='text-xs font-medium text-slate-700 dark:text-slate-200'>Start</Text>
                                             </Pressable>
                                         )
                                     }
@@ -617,15 +629,15 @@ const Dashboard = () => {
             </View>
 
             {/* Providers Section */}
-            <View className='w-full bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex-col'>
-                <View className='flex-row items-center justify-between mb-4 pb-3 border-b border-slate-100'>
+            <View className='w-full bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 shadow-sm flex-col'>
+                <View className='flex-row items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-slate-800'>
                     <View className='flex-row items-center gap-2'>
-                        <Ionicons name='radio-outline' size={20} color='#475569' />
-                        <Text className='font-bold text-lg text-slate-800'>Providers</Text>
+                        <Ionicons name='radio-outline' size={20} color={isDarkMode ? '#cbd5e1' : '#475569'} />
+                        <Text className='font-bold text-lg text-slate-800 dark:text-slate-100'>Providers</Text>
                     </View>
                     <View className='flex-row items-center gap-3'>
-                        <View className='bg-slate-100 px-2.5 py-1 rounded-full'>
-                            <Text className='text-xs font-semibold text-slate-600'>{providers.length} Total</Text>
+                        <View className='bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full'>
+                            <Text className='text-xs font-semibold text-slate-600 dark:text-slate-300'>{providers.length} Total</Text>
                         </View>
                         <Pressable
                             className='flex-row items-center gap-1 bg-indigo-600 px-3 py-1.5 rounded-lg active:bg-indigo-700'
@@ -645,26 +657,26 @@ const Dashboard = () => {
                 ) : (
                     <View className='gap-3'>
                         {providers.map((provider) => (
-                            <View key={provider.id} className='w-full flex-row items-center justify-between border border-slate-100 rounded-xl p-4 bg-slate-50/50'>
+                            <View key={provider.id} className='w-full flex-row items-center justify-between border border-slate-100 dark:border-slate-800 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-950/40'>
                                 <View className='flex-row items-center gap-4 flex-1'>
-                                    <View className='w-10 h-10 rounded-lg bg-indigo-50 items-center justify-center'>
+                                    <View className='w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 items-center justify-center'>
                                         <Ionicons name='wifi-outline' size={20} color='#6366f1' />
                                     </View>
                                     <View className='flex-1 gap-0.5'>
                                         <View className='flex-row items-center gap-2'>
-                                            <Text className='font-semibold text-slate-800 text-base'>{provider.name}</Text>
-                                            <View className='bg-slate-200 px-1.5 py-0.5 rounded'>
-                                                <Text className='text-[10px] font-bold text-slate-600'>ID: {provider.id}</Text>
+                                            <Text className='font-semibold text-slate-800 dark:text-slate-100 text-base'>{provider.name}</Text>
+                                            <View className='bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded'>
+                                                <Text className='text-[10px] font-bold text-slate-600 dark:text-slate-300'>ID: {provider.id}</Text>
                                             </View>
                                         </View>
                                     </View>
                                 </View>
                                 <Pressable
-                                    className='h-8 px-3 rounded-lg border border-slate-200 bg-white items-center justify-center flex-row gap-1 active:bg-slate-50'
+                                    className='h-8 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 items-center justify-center flex-row gap-1 active:bg-slate-50 dark:active:bg-slate-800'
                                     onPress={() => handleEditProvider(provider.id)}
                                 >
-                                    <Ionicons name='create-outline' size={14} color='#475569' />
-                                    <Text className='text-xs font-medium text-slate-700'>Edit</Text>
+                                    <Ionicons name='create-outline' size={14} color={isDarkMode ? '#cbd5e1' : '#475569'} />
+                                    <Text className='text-xs font-medium text-slate-700 dark:text-slate-200'>Edit</Text>
                                 </Pressable>
                             </View>
                         ))}
@@ -673,15 +685,15 @@ const Dashboard = () => {
             </View>
 
             {/* Automated Users Section */}
-            <View className='w-full bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex-col'>
-                <View className='flex-row items-center justify-between mb-4 pb-3 border-b border-slate-100'>
+            <View className='w-full bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-5 shadow-sm flex-col'>
+                <View className='flex-row items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-slate-800'>
                     <View className='flex-row items-center gap-2'>
-                        <Ionicons name='people-outline' size={20} color='#475569' />
-                        <Text className='font-bold text-lg text-slate-800'>Automated Users</Text>
+                        <Ionicons name='people-outline' size={20} color={isDarkMode ? '#cbd5e1' : '#475569'} />
+                        <Text className='font-bold text-lg text-slate-800 dark:text-slate-100'>Automated Users</Text>
                     </View>
                     <View className='flex-row items-center gap-3'>
-                        <View className='bg-slate-100 px-2.5 py-1 rounded-full'>
-                            <Text className='text-xs font-semibold text-slate-600'>{automatedUsers.length} Total</Text>
+                        <View className='bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full'>
+                            <Text className='text-xs font-semibold text-slate-600 dark:text-slate-300'>{automatedUsers.length} Total</Text>
                         </View>
                         <Pressable
                             className='flex-row items-center gap-1 bg-indigo-600 px-3 py-1.5 rounded-lg active:bg-indigo-700'
@@ -701,40 +713,40 @@ const Dashboard = () => {
                 ) : (
                     <View className='gap-3'>
                         {automatedUsers.map((user) => (
-                            <View key={user.id} className='w-full flex-row items-center justify-between border border-slate-100 rounded-xl p-4 bg-slate-50/50'>
+                            <View key={user.id} className='w-full flex-row items-center justify-between border border-slate-100 dark:border-slate-800 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-950/40'>
                                 <View className='flex-row items-center gap-4 flex-1'>
                                     {getAvatarUrl(user.profile?.avatar) ? (
                                         <Image
                                             source={{ uri: getAvatarUrl(user.profile?.avatar) }}
-                                            className="w-10 h-10 rounded-full bg-slate-100"
+                                            className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800"
                                         />
                                     ) : (
-                                        <View className='w-10 h-10 rounded-full bg-emerald-50 items-center justify-center'>
+                                        <View className='w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-950/40 items-center justify-center'>
                                             <Ionicons name='person-circle-outline' size={22} color='#10b981' />
                                         </View>
                                     )}
                                     <View className='flex-1 gap-0.5'>
                                         <View className='flex-row items-center gap-2'>
-                                            <Text className='font-semibold text-slate-800 text-base'>
+                                            <Text className='font-semibold text-slate-800 dark:text-slate-100 text-base'>
                                                 {user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : (user.name || user.id)}
                                             </Text>
-                                            <View className='bg-slate-200 px-1.5 py-0.5 rounded'>
-                                                <Text className='text-[10px] font-bold text-slate-600'>ID: {user.id}</Text>
+                                            <View className='bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded'>
+                                                <Text className='text-[10px] font-bold text-slate-600 dark:text-slate-300'>ID: {user.id}</Text>
                                             </View>
                                         </View>
                                         {user.profile?.bio ? (
-                                            <Text className='text-xs text-slate-500' numberOfLines={1}>
+                                            <Text className='text-xs text-slate-500 dark:text-slate-400' numberOfLines={1}>
                                                 {user.profile.bio}
                                             </Text>
                                         ) : null}
                                     </View>
                                 </View>
                                 <Pressable
-                                    className='h-8 px-3 rounded-lg border border-slate-200 bg-white items-center justify-center flex-row gap-1 active:bg-slate-50'
+                                    className='h-8 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 items-center justify-center flex-row gap-1 active:bg-slate-50 dark:active:bg-slate-800'
                                     onPress={() => handleEditUser(user.id)}
                                 >
-                                    <Ionicons name='create-outline' size={14} color='#475569' />
-                                    <Text className='text-xs font-medium text-slate-700'>Edit</Text>
+                                    <Ionicons name='create-outline' size={14} color={isDarkMode ? '#cbd5e1' : '#475569'} />
+                                    <Text className='text-xs font-medium text-slate-700 dark:text-slate-200'>Edit</Text>
                                 </Pressable>
                             </View>
                         ))}
@@ -752,42 +764,44 @@ const Dashboard = () => {
                 onRequestClose={() => setSelectedIntegration(null)}
             >
                 <View className='flex-1 justify-center items-center bg-black/40 px-4'>
-                    <View className='w-full max-w-[400px] bg-white rounded-2xl p-6 shadow-xl border border-slate-100'>
+                    <View className='w-full max-w-[400px] bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-xl border border-slate-100 dark:border-slate-800'>
                         <View className='flex-row justify-between items-center mb-6'>
-                            <Text className='text-lg font-bold text-slate-800'>
+                            <Text className='text-lg font-bold text-slate-800 dark:text-slate-100'>
                                 {selectedIntegration?.id === 'new' ? 'Add Feed Integration' : 'Edit Feed Integration'}
                             </Text>
-                            <Pressable onPress={() => setSelectedIntegration(null)} className='p-1 rounded-full active:bg-slate-100'>
-                                <Ionicons name='close' size={20} color='#64748b' />
+                            <Pressable onPress={() => setSelectedIntegration(null)} className='p-1 rounded-full active:bg-slate-100 dark:active:bg-slate-800'>
+                                <Ionicons name='close' size={20} color={isDarkMode ? '#cbd5e1' : '#64748b'} />
                             </Pressable>
                         </View>
 
                         <View className='gap-5 mb-8'>
                             <View className='gap-2'>
-                                <Text className='text-sm font-semibold text-slate-600'>Provider</Text>
+                                <Text className='text-sm font-semibold text-slate-600 dark:text-slate-300'>Provider</Text>
                                 <AppSelect
                                     items={providerItems}
                                     placeholder="Select Provider"
                                     value={modalIntegrationProvider}
                                     onValueChange={setModalIntegrationProvider}
+                                    isDarkMode={isDarkMode}
                                 />
                             </View>
 
                             <View className='gap-2'>
-                                <Text className='text-sm font-semibold text-slate-600'>Automated User</Text>
+                                <Text className='text-sm font-semibold text-slate-600 dark:text-slate-300'>Automated User</Text>
                                 <AppSelect
                                     items={userItems}
                                     placeholder="Select User"
                                     value={modalIntegrationUser}
                                     onValueChange={setModalIntegrationUser}
+                                    isDarkMode={isDarkMode}
                                 />
                             </View>
 
                             <View className='gap-2'>
-                                <Text className='text-sm font-semibold text-slate-600'>Tag</Text>
+                                <Text className='text-sm font-semibold text-slate-600 dark:text-slate-300'>Tag</Text>
                                 <TextInput
-                                    className='px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-800'
-                                    placeholderTextColor="#94a3b8"
+                                    className='px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-sm text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800'
+                                    placeholderTextColor={'#94a3b8'}
                                     placeholder='Enter Tag'
                                     value={modalIntegrationTag}
                                     onChangeText={setModalIntegrationTag}
@@ -809,10 +823,10 @@ const Dashboard = () => {
                             )}
                             <View className='flex-row gap-3'>
                                 <Pressable
-                                    className='px-4 py-2 rounded-xl border border-slate-200 bg-white active:bg-slate-50'
+                                    className='px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 active:bg-slate-50 dark:active:bg-slate-800'
                                     onPress={() => setSelectedIntegration(null)}
                                 >
-                                    <Text className='text-sm font-medium text-slate-600'>Cancel</Text>
+                                    <Text className='text-sm font-medium text-slate-600 dark:text-slate-300'>Cancel</Text>
                                 </Pressable>
                                 <Pressable
                                     className='px-4 py-2 rounded-xl bg-indigo-600 active:bg-indigo-700'
@@ -834,21 +848,21 @@ const Dashboard = () => {
                 onRequestClose={() => setSelectedProvider(null)}
             >
                 <View className='flex-1 justify-center items-center bg-black/40 px-4'>
-                    <View className='w-full max-w-[400px] bg-white rounded-2xl p-6 shadow-xl border border-slate-100'>
+                    <View className='w-full max-w-[400px] bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-xl border border-slate-100 dark:border-slate-800'>
                         <View className='flex-row justify-between items-center mb-6'>
-                            <Text className='text-lg font-bold text-slate-800'>
+                            <Text className='text-lg font-bold text-slate-800 dark:text-slate-100'>
                                 {selectedProvider?.id === 'new' ? 'Add Provider' : 'Edit Provider'}
                             </Text>
-                            <Pressable onPress={() => setSelectedProvider(null)} className='p-1 rounded-full active:bg-slate-100'>
-                                <Ionicons name='close' size={20} color='#64748b' />
+                            <Pressable onPress={() => setSelectedProvider(null)} className='p-1 rounded-full active:bg-slate-100 dark:active:bg-slate-800'>
+                                <Ionicons name='close' size={20} color={isDarkMode ? '#cbd5e1' : '#64748b'} />
                             </Pressable>
                         </View>
 
                         <View className='gap-5 mb-8'>
                             <View className='gap-2'>
-                                <Text className='text-sm font-semibold text-slate-600'>Provider Name</Text>
+                                <Text className='text-sm font-semibold text-slate-600 dark:text-slate-300'>Provider Name</Text>
                                 <TextInput
-                                    style={styles.textInput}
+                                    style={[styles.textInput, isDarkMode && styles.textInputDark]}
                                     placeholder="Enter provider name"
                                     placeholderTextColor="#94a3b8"
                                     value={modalProviderName}
@@ -856,9 +870,9 @@ const Dashboard = () => {
                                 />
                             </View>
                             <View className='gap-2'>
-                                <Text className='text-sm font-semibold text-slate-600'>Provider Base Url</Text>
+                                <Text className='text-sm font-semibold text-slate-600 dark:text-slate-300'>Provider Base Url</Text>
                                 <TextInput
-                                    style={styles.textInput}
+                                    style={[styles.textInput, isDarkMode && styles.textInputDark]}
                                     placeholder="Enter provider base url"
                                     placeholderTextColor="#94a3b8"
                                     value={modalProviderBaseUrl}
@@ -881,10 +895,10 @@ const Dashboard = () => {
                             )}
                             <View className='flex-row gap-3'>
                                 <Pressable
-                                    className='px-4 py-2 rounded-xl border border-slate-200 bg-white active:bg-slate-50'
+                                    className='px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 active:bg-slate-50 dark:active:bg-slate-800'
                                     onPress={() => setSelectedProvider(null)}
                                 >
-                                    <Text className='text-sm font-medium text-slate-600'>Cancel</Text>
+                                    <Text className='text-sm font-medium text-slate-600 dark:text-slate-300'>Cancel</Text>
                                 </Pressable>
                                 <Pressable
                                     className='px-4 py-2 rounded-xl bg-indigo-600 active:bg-indigo-700'
@@ -906,21 +920,21 @@ const Dashboard = () => {
                 onRequestClose={() => setSelectedUser(null)}
             >
                 <View className='flex-1 justify-center items-center bg-black/40 px-4'>
-                    <View className='w-full max-w-[400px] bg-white rounded-2xl p-6 shadow-xl border border-slate-100'>
+                    <View className='w-full max-w-[400px] bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-xl border border-slate-100 dark:border-slate-800'>
                         <View className='flex-row justify-between items-center mb-6'>
-                            <Text className='text-lg font-bold text-slate-800'>
+                            <Text className='text-lg font-bold text-slate-800 dark:text-slate-100'>
                                 {selectedUser?.id === 'new' ? 'Add Automated User' : 'Edit Automated User'}
                             </Text>
-                            <Pressable onPress={() => setSelectedUser(null)} className='p-1 rounded-full active:bg-slate-100'>
-                                <Ionicons name='close' size={20} color='#64748b' />
+                            <Pressable onPress={() => setSelectedUser(null)} className='p-1 rounded-full active:bg-slate-100 dark:active:bg-slate-800'>
+                                <Ionicons name='close' size={20} color={isDarkMode ? '#cbd5e1' : '#64748b'} />
                             </Pressable>
                         </View>
 
                         <View className='gap-5 mb-8'>
                             <View className='gap-2'>
-                                <Text className='text-sm font-semibold text-slate-600'>First Name</Text>
+                                <Text className='text-sm font-semibold text-slate-600 dark:text-slate-300'>First Name</Text>
                                 <TextInput
-                                    style={styles.textInput}
+                                    style={[styles.textInput, isDarkMode && styles.textInputDark]}
                                     placeholder="Enter first name"
                                     placeholderTextColor="#94a3b8"
                                     value={modalFirstName}
@@ -928,9 +942,9 @@ const Dashboard = () => {
                                 />
                             </View>
                             <View className='gap-2'>
-                                <Text className='text-sm font-semibold text-slate-600'>Last Name</Text>
+                                <Text className='text-sm font-semibold text-slate-600 dark:text-slate-300'>Last Name</Text>
                                 <TextInput
-                                    style={styles.textInput}
+                                    style={[styles.textInput, isDarkMode && styles.textInputDark]}
                                     placeholder="Enter last name"
                                     placeholderTextColor="#94a3b8"
                                     value={modalLastName}
@@ -938,9 +952,9 @@ const Dashboard = () => {
                                 />
                             </View>
                             <View className='gap-2'>
-                                <Text className='text-sm font-semibold text-slate-600'>Bio</Text>
+                                <Text className='text-sm font-semibold text-slate-600 dark:text-slate-300'>Bio</Text>
                                 <TextInput
-                                    style={[styles.textInput, { minHeight: 60, textAlignVertical: 'top' }]}
+                                    style={[styles.textInput, isDarkMode && styles.textInputDark, { minHeight: 60, textAlignVertical: 'top' }]}
                                     multiline
                                     numberOfLines={2}
                                     placeholder="Tell us about yourself..."
@@ -950,13 +964,13 @@ const Dashboard = () => {
                                 />
                             </View>
                             <View className='gap-2'>
-                                <Text className='text-sm font-semibold text-slate-600'>Profile Avatar</Text>
+                                <Text className='text-sm font-semibold text-slate-600 dark:text-slate-300 dark:text-slate-300'>Profile Avatar</Text>
                                 {modalAvatar ? (
-                                    <View className="flex-row items-center justify-between border border-slate-200 p-2 rounded-lg bg-slate-50">
+                                    <View className="flex-row items-center justify-between border border-slate-200 dark:border-slate-700 p-2 rounded-lg bg-slate-50 dark:bg-slate-800">
                                         <Text
                                             ellipsizeMode="middle"
                                             numberOfLines={1}
-                                            className="flex-1 text-xs text-slate-600 mr-2"
+                                            className="flex-1 text-xs text-slate-600 dark:text-slate-300 mr-2"
                                         >
                                             {modalAvatar.split("/").pop()}
                                         </Text>
@@ -972,10 +986,10 @@ const Dashboard = () => {
                                 ) : (
                                     <Pressable
                                         onPress={pickImage}
-                                        className="flex-row items-center gap-2 p-2.5 justify-center bg-blue-50 border border-blue-200 rounded-lg active:bg-blue-100"
+                                        className="flex-row items-center gap-2 p-2.5 justify-center bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800 rounded-lg active:bg-violet-100 dark:active:bg-violet-900/40"
                                     >
-                                        <Ionicons name="cloud-upload" size={18} color="#2563eb" />
-                                        <Text className="text-blue-600 text-xs font-semibold">
+                                        <Ionicons name="cloud-upload" size={18} color="#7c3aed" />
+                                        <Text className="text-violet-600 dark:text-violet-300 text-xs font-semibold">
                                             Upload Avatar
                                         </Text>
                                     </Pressable>
@@ -997,10 +1011,10 @@ const Dashboard = () => {
                             )}
                             <View className='flex-row gap-3'>
                                 <Pressable
-                                    className='px-4 py-2 rounded-xl border border-slate-200 bg-white active:bg-slate-50'
+                                    className='px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 active:bg-slate-50 dark:active:bg-slate-800'
                                     onPress={() => setSelectedUser(null)}
                                 >
-                                    <Text className='text-sm font-medium text-slate-600'>Cancel</Text>
+                                    <Text className='text-sm font-medium text-slate-600 dark:text-slate-300'>Cancel</Text>
                                 </Pressable>
                                 <Pressable
                                     className='px-4 py-2 rounded-xl bg-indigo-600 active:bg-indigo-700'
@@ -1030,12 +1044,22 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         minHeight: 44,
     },
+    triggerDark: {
+        backgroundColor: '#0f172a',
+        borderColor: '#334155',
+    },
     triggerText: {
         fontSize: 14,
         color: '#1e293b',
         flex: 1,
     },
+    triggerTextDark: {
+        color: '#e2e8f0',
+    },
     triggerPlaceholder: {
+        color: '#94a3b8',
+    },
+    triggerPlaceholderDark: {
         color: '#94a3b8',
     },
     textInput: {
@@ -1048,6 +1072,11 @@ const styles = StyleSheet.create({
         minHeight: 44,
         fontSize: 14,
         color: '#1e293b',
+    },
+    textInputDark: {
+        backgroundColor: '#0f172a',
+        borderColor: '#334155',
+        color: '#e2e8f0',
     },
     pickerOverlay: {
         flex: 1,
@@ -1064,6 +1093,9 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         maxHeight: 340,
     },
+    pickerSheetDark: {
+        backgroundColor: '#0f172a',
+    },
     pickerHeader: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -1073,10 +1105,16 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#f1f5f9',
     },
+    pickerHeaderDark: {
+        borderBottomColor: '#1e293b',
+    },
     pickerTitle: {
         fontSize: 15,
         fontWeight: '600',
         color: '#1e293b',
+    },
+    pickerTitleDark: {
+        color: '#e2e8f0',
     },
     pickerClose: {
         padding: 4,
@@ -1090,12 +1128,21 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#f8fafc',
     },
+    pickerItemDark: {
+        borderBottomColor: '#1e293b',
+    },
     pickerItemActive: {
         backgroundColor: '#f0f0ff',
+    },
+    pickerItemActiveDark: {
+        backgroundColor: '#312e81',
     },
     pickerItemText: {
         fontSize: 14,
         color: '#334155',
+    },
+    pickerItemTextDark: {
+        color: '#e2e8f0',
     },
     pickerItemTextActive: {
         color: '#6366f1',

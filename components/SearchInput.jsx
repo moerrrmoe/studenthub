@@ -68,21 +68,21 @@ export default function SearchInput({
     <View
       className={`flex-row items-center rounded-full pl-3.5 pr-2 h-[38px] w-full border transition-all duration-200 ${
         isFocused
-          ? "bg-white border-blue-500 shadow-sm"
-          : "bg-gray-100 border-gray-200"
+          ? "bg-white dark:bg-slate-900 border-violet-500 shadow-sm"
+          : "bg-gray-100 dark:bg-slate-800 border-gray-200 dark:border-slate-800"
       } ${containerClassName}`}
     >
       <Pressable onPress={handleSubmit} hitSlop={6}>
         <Ionicons
           name="search-outline"
           size={17}
-          color={isFocused ? "#2563eb" : "#9ca3af"}
+          color={isFocused ? "#7c3aed" : "#9ca3af"}
         />
       </Pressable>
 
       <TextInput
         placeholderTextColor="#9ca3af"
-        className="flex-1 px-2.5 py-1.5 text-sm text-gray-800 outline-none h-full"
+        className="flex-1 px-2.5 py-1.5 text-sm text-gray-800 dark:text-slate-200 outline-none h-full"
         placeholder={placeholder}
         value={query}
         onChangeText={handleChangeText}
@@ -105,11 +105,11 @@ export default function SearchInput({
 
       {showAskAi && (
         <Pressable
-          className="flex-row items-center bg-blue-50 active:bg-blue-100 rounded-full px-2.5 py-1 gap-1 border border-blue-100 ml-0.5"
+          className="flex-row items-center bg-violet-50 active:bg-violet-100 rounded-full px-2.5 py-1 gap-1 border border-violet-100 ml-0.5"
           onPress={() => router.push("/chat/ai")}
         >
-          <Ionicons name="sparkles" size={12} color="#2563eb" />
-          <Text className="text-xs font-semibold text-blue-600">Ask</Text>
+          <Ionicons name="sparkles" size={12} color="#7c3aed" />
+          <Text className="text-xs font-semibold text-violet-600">Ask</Text>
         </Pressable>
       )}
     </View>

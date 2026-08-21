@@ -6,6 +6,7 @@ const { withUniwindConfig } = require('uniwind/metro');
 const config = getDefaultConfig(__dirname);
 
 config.resolver.assetExts.push('html');
+config.resolver.assetExts.push('ttf');
 
 module.exports = withUniwindConfig(config, {
     cssEntryFile: './global.css',

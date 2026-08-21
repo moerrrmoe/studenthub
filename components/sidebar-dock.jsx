@@ -102,13 +102,12 @@ const SidebarDock = ({ collapsed = false }) => {
 
   return (
     <View
-      className={`hidden lg:flex bg-white border-r border-gray-200 h-full ${
-        collapsed ? "py-3 px-1.5 items-center" : "py-3 px-2.5"
-      }`}
+      className={`hidden lg:flex bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 h-full ${collapsed ? "py-3 px-1.5 items-center" : "py-3 px-2.5"
+        }`}
       style={{ width: collapsed ? 60 : 200 }}
     >
       {/* Nav Items */}
-      <View className="w-full">
+      <View className="w-full gap-3">
         {navItems.map((item) => {
           const isActive = item.match(active);
 
@@ -117,7 +116,7 @@ const SidebarDock = ({ collapsed = false }) => {
               key={item.key}
               className={`flex-row items-center mb-0.5 rounded-lg cursor-pointer
                 ${collapsed ? "justify-center py-2.5" : "gap-3 px-3 py-2.5"}
-                ${isActive ? "bg-blue-50" : "hover:bg-gray-50"}
+                ${isActive ? "bg-violet-50" : "hover:bg-gray-50 dark:bg-slate-950"}
               `}
               style={
                 collapsed
@@ -133,15 +132,14 @@ const SidebarDock = ({ collapsed = false }) => {
               <Ionicons
                 name={isActive ? item.activeIcon : item.icon}
                 size={22}
-                color={isActive ? "#2563eb" : "#6b7280"}
+                color={isActive ? "#7c3aed" : "#6b7280"}
               />
               {!collapsed && (
                 <Text
-                  className={`text-sm ${
-                    isActive
-                      ? "font-semibold text-blue-600"
+                  className={`text-sm ${isActive
+                      ? "font-semibold text-violet-600"
                       : "font-medium text-gray-500"
-                  }`}
+                    }`}
                 >
                   {item.label}
                 </Text>

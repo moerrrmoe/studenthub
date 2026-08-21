@@ -7,7 +7,7 @@ import { useLocalSearchParams } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 
-import { useApiConfig } from "@/contexts/ApiConfigContext";
+import { useApiConfig } from "@/contexts/ApiConfigContext"
 
 const Post = () => {
     const { getCleanUrl } = useApiConfig();
@@ -41,15 +41,15 @@ const Post = () => {
 
     if (isLoading) {
         return (
-            <View className="w-full flex-1 items-center justify-center bg-[#f5f6f8]">
-                <ActivityIndicator size={20} color="#2563eb" />
+            <View className="w-full flex-1 items-center justify-center bg-[#f5f6f8] dark:bg-slate-950">
+                <ActivityIndicator size={20} color="#7c3aed" />
             </View>
         )
     }
 
     if (error) {
         return (
-            <View className="w-full flex-1 items-center justify-center bg-[#f5f6f8]">
+            <View className="w-full flex-1 items-center justify-center bg-[#f5f6f8] dark:bg-slate-950">
                 <Text className="text-red-500">{error}</Text>
             </View>
         )
@@ -57,8 +57,8 @@ const Post = () => {
 
     if (!post) {
         return (
-            <View className="w-full flex-1 items-center justify-center bg-[#f5f6f8]">
-                <Text className="text-gray-400">Post not found</Text>
+            <View className="w-full flex-1 items-center justify-center bg-[#f5f6f8] dark:bg-slate-950">
+                <Text className="text-gray-400 dark:text-slate-500">Post not found</Text>
             </View>
         )
     }
@@ -110,13 +110,13 @@ const Post = () => {
             return getFallbackAvatar(fallbackLabel);
         }
         if (normalizedAvatar.startsWith("http")) return normalizedAvatar;
-        const cleanBase = API_BASE_URL.endsWith("/") ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
+        const cleanBase = getCleanUrl();
         const cleanPath = normalizedAvatar.startsWith("/") ? normalizedAvatar : `/${normalizedAvatar}`;
         return `${cleanBase}${cleanPath}`;
     };
 
     return (
-        <View className='w-full flex-1 flex-col p-2 bg-[#f5f6f8] items-center'>
+        <View className='w-full flex-1 flex-col p-2 bg-[#f5f6f8] dark:bg-slate-950 items-center'>
             <ScrollView className='flex-1 w-full' contentContainerStyle={{ flexGrow: 1, alignItems: 'center' }} showsVerticalScrollIndicator={false}>
                 <View className='w-full max-w-[700px]'>
                     <PostCard
@@ -141,10 +141,10 @@ const Post = () => {
                         isDetailView={true}
                         createdAt={post.createdAt}
                     />
-                    <View className='bg-white border border-gray-200 px-4 rounded-t-xl mt-3'>
-                        <Text className='text-base font-semibold text-gray-900 py-3'>Comments</Text>
+                    <View className='bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 px-4 rounded-t-xl mt-3'>
+                        <Text className='text-base font-semibold text-gray-900 dark:text-white py-3'>Comments</Text>
                     </View>
-                    <View className='bg-white border-b border-l border-r border-gray-200 px-4 pb-4 rounded-b-xl mb-4'>
+                    <View className='bg-white dark:bg-slate-900 border-b border-l border-r border-gray-200 dark:border-slate-800 px-4 pb-4 rounded-b-xl mb-4'>
                         {post.comments?.length > 0 && (
                             post.comments.map((comment) => (
                                 <Comment key={comment.id} setToReply={setToReply} comment={comment} currentUser={user} />
@@ -153,7 +153,7 @@ const Post = () => {
                         {post.comments?.length === 0 && (
                             <View className='items-center justify-center py-10'>
                                 <Ionicons name="chatbubble-outline" size={28} color="#d1d5db" />
-                                <Text className='text-gray-400 text-sm mt-2'>No comments yet</Text>
+                                <Text className='text-gray-400 dark:text-slate-500 text-sm mt-2'>No comments yet</Text>
                             </View>
                         )}
                     </View>
@@ -161,21 +161,21 @@ const Post = () => {
             </ScrollView>
             <View className='w-full max-w-[700px] self-center'>
                 {toReply && (
-                    <View className="bg-white border border-gray-200 gap-3 flex-row items-center px-4 py-2.5 rounded-t-lg">
+                    <View className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 gap-3 flex-row items-center px-4 py-2.5 rounded-t-lg">
                         <Entypo name='reply' size={16} color='#6b7280' />
-                        <Text className='text-sm text-gray-500'>Replying to comment</Text>
+                        <Text className='text-sm text-gray-500 dark:text-slate-300'>Replying to comment</Text>
                         <Pressable className='ml-auto' onPress={() => setToReply(null)}>
-                            <Text className='text-blue-600 text-sm font-semibold'>Cancel</Text>
+                            <Text className='text-violet-600 text-sm font-semibold'>Cancel</Text>
                         </Pressable>
                     </View>
                 )}
-                <View className="bg-white w-full border border-gray-200 px-4 py-3 flex-row items-end gap-3 rounded-b-lg">
-                    <View className='flex-1 bg-gray-100 rounded-2xl px-4 py-2 flex-row items-center min-h-[44px] max-h-[100px]'>
+                <View className="bg-white dark:bg-slate-900 w-full border border-gray-200 dark:border-slate-800 px-4 py-3 flex-row items-end gap-3 rounded-b-lg">
+                    <View className='flex-1 bg-gray-100 dark:bg-slate-800 rounded-2xl px-4 py-2 flex-row items-center min-h-[44px] max-h-[100px]'>
                         <TextInput
                             value={commentText}
                             onChangeText={setCommentText}
                             multiline
-                            className='flex-1 text-sm text-gray-800 p-0 text-left justify-center'
+                            className='flex-1 text-sm text-gray-800 dark:text-slate-200 p-0 text-left justify-center'
                             placeholderTextColor={'#9ca3af'}
                             placeholder='Add a comment...'
                             style={{ textAlignVertical: 'center' }}
@@ -183,7 +183,7 @@ const Post = () => {
                     </View>
                     <Pressable
                         onPress={() => handleNewComment(commentText)}
-                        className={`w-[40px] h-[40px] rounded-full justify-center items-center ${commentText.trim() ? 'bg-blue-600' : 'bg-gray-200'}`}
+                        className={`w-[40px] h-[40px] rounded-full justify-center items-center ${commentText.trim() ? 'bg-violet-600' : 'bg-gray-200'}`}
                         disabled={!commentText.trim()}
                     >
                         <Ionicons name='send' size={16} color='white' />

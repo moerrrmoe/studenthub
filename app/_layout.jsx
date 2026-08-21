@@ -1,10 +1,11 @@
+import { ApiConfigProvider, useApiConfig } from "@/contexts/ApiConfigContext";
 import { tokenCache } from "@/lib/tokenCache";
 import { ClerkLoaded, ClerkProvider, useAuth } from "@clerk/expo";
+import "expo-font";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { useEffect } from "react";
 import { ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ApiConfigProvider, useApiConfig } from "@/contexts/ApiConfigContext";
 import "../global.css";
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -42,7 +43,7 @@ function InitialLayout() {
   }
 
   return (
-    <Stack>
+    <Stack screenOptions={{ contentStyle: { backgroundColor: "transparent" } }}>
       <Stack.Screen name="post" options={{ headerShown: false }} />
       <Stack.Screen name="profile" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -52,16 +53,20 @@ function InitialLayout() {
   );
 }
 
+import { ThemeProvider } from "@/contexts/ThemeContext";
+
 export default function RootLayout() {
   return (
-    <ApiConfigProvider>
-      <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
-        <ClerkLoaded>
-          <SafeAreaView className="flex-1 bg-[#f5f6f8]">
-            <InitialLayout />
-          </SafeAreaView>
-        </ClerkLoaded>
-      </ClerkProvider>
-    </ApiConfigProvider>
+    <ThemeProvider>
+      <ApiConfigProvider>
+        <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
+          <ClerkLoaded>
+            <SafeAreaView className="flex-1 bg-[#f5f6f8] dark:bg-slate-950">
+              <InitialLayout />
+            </SafeAreaView>
+          </ClerkLoaded>
+        </ClerkProvider>
+      </ApiConfigProvider>
+    </ThemeProvider>
   );
 }

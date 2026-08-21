@@ -24,7 +24,7 @@ const Dock = () => {
   ];
 
   return (
-    <View className="flex-row w-full h-14 justify-around bg-white border-t border-gray-200 lg:hidden">
+    <View className="flex-row w-full h-14 justify-around bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800 lg:hidden">
       {items.map((item) => {
         const isActive = item.match(active);
         return (
@@ -38,11 +38,11 @@ const Dock = () => {
             <Ionicons
               name={isActive ? item.activeIcon : item.icon}
               size={item.isCreate ? 40 : 22}
-              color={item.isCreate ? "#2563eb" : isActive ? "#2563eb" : "#9ca3af"}
+              color={item.isCreate ? "#7c3aed" : isActive ? "#7c3aed" : "#9ca3af"}
             />
             {!item.isCreate && (
               <Text
-                className={`text-[10px] mt-0.5 ${isActive ? "text-blue-600 font-semibold" : "text-gray-400"}`}
+                className={`text-[10px] mt-0.5 ${isActive ? "text-violet-600 font-semibold" : "text-gray-400"}`}
               >
                 {item.key.charAt(0).toUpperCase() + item.key.slice(1)}
               </Text>

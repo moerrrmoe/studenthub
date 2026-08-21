@@ -16,6 +16,7 @@ import {
 } from "react-native";
 
 import { useApiConfig } from "@/contexts/ApiConfigContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 let cachedConversations = [];
 let isInitialFetched = false;
@@ -32,6 +33,7 @@ const ChatList = ({
   onCreateChat,
 }) => {
   const { getCleanUrl } = useApiConfig();
+  const { isDarkMode } = useTheme();
   const [conversations, setConversations] = useState(cachedConversations);
   const [paginationMeta, setPaginationMeta] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -245,7 +247,7 @@ const ChatList = ({
     if (isLoadingMore) {
       return (
         <View className="py-4 items-center justify-center">
-          <ActivityIndicator size="small" color="#2563eb" />
+          <ActivityIndicator size="small" color="#7c3aed" />
         </View>
       );
     }
@@ -284,19 +286,22 @@ const ChatList = ({
     return (
       <Pressable
         onPress={() => router.push(`/chat/${item?.id}`)}
-        className={`flex-row items-center px-4 py-3 border-b border-gray-100 cursor-pointer ${isActive ? "bg-blue-50" : "bg-white hover:bg-gray-50"
-          }`}
+        className={`flex-row items-center px-4 py-3 border-b border-gray-100 dark:border-slate-800 cursor-pointer ${
+          isActive
+            ? "bg-violet-50 dark:bg-violet-950/30"
+            : "bg-white dark:bg-slate-900 hover:bg-gray-50 dark:hover:bg-slate-800"
+        }`}
       >
         {/* Active state left indicator */}
         {isActive && (
-          <View className="absolute left-0 top-0 bottom-0 w-0.5 bg-blue-600" />
+          <View className="absolute left-0 top-0 bottom-0 w-0.5 bg-violet-600" />
         )}
 
         {/* Avatar */}
         <View className="relative mr-3">
           <Image
             source={{ uri: avatarUri }}
-            className="w-10 h-10 rounded-full bg-gray-100"
+            className="w-10 h-10 rounded-full bg-gray-100 dark:bg-slate-800"
           />
 
           {item?.type === "group" && (
@@ -312,7 +317,7 @@ const ChatList = ({
         <View className="flex-1 justify-center">
           <View className="flex-row justify-between items-center mb-0.5">
             <Text
-              className="text-sm font-semibold text-gray-900"
+              className="text-sm font-semibold text-gray-900 dark:text-white"
               numberOfLines={1}
             >
               {displayName}
@@ -324,7 +329,7 @@ const ChatList = ({
 
           <View className="flex-row  items-center">
             <Text
-              className={`text-xs mr-2 ${numberOfUnreadMessages > 0 ? "font-semibold text-gray-900" : "text-gray-400"}`}
+              className={`text-xs mr-2 ${numberOfUnreadMessages > 0 ? "font-semibold text-gray-900 dark:text-white" : "text-gray-400"}`}
               numberOfLines={1}
             >
               {lastMessage ? lastMessage.content : ""}
@@ -341,26 +346,26 @@ const ChatList = ({
   };
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 bg-white dark:bg-slate-900">
       {/* Sidebar Header */}
-      <View className="px-4 py-3 flex-row justify-between items-center border-b border-gray-100">
-        <Text className="text-base font-semibold text-gray-900">Messages</Text>
+      <View className="px-4 py-3 flex-row justify-between items-center border-b border-gray-100 dark:border-slate-800">
+        <Text className="text-base font-semibold text-gray-900 dark:text-white">Messages</Text>
         <View className="flex-row items-center gap-1">
           <Pressable
             onPress={() => fetchConversations(1, false, true)}
-            className="p-1.5 rounded-full hover:bg-gray-100 cursor-pointer"
+            className="p-1.5 rounded-full hover:bg-gray-100 dark:bg-slate-800 cursor-pointer"
             disabled={refreshing}
           >
             <Ionicons
               name="reload-outline"
               size={16}
-              color={refreshing ? "#2563eb" : "#9ca3af"}
+              color={refreshing ? "#7c3aed" : "#9ca3af"}
             />
           </Pressable>
           {onCreateChat && (
             <Pressable
               onPress={onCreateChat}
-              className="p-1.5 rounded-full hover:bg-gray-100 cursor-pointer"
+              className="p-1.5 rounded-full hover:bg-gray-100 dark:bg-slate-800 cursor-pointer"
             >
               <Ionicons name="create-outline" size={18} color="#9ca3af" />
             </Pressable>
@@ -380,8 +385,8 @@ const ChatList = ({
           <RefreshControl
             refreshing={refreshing}
             onRefresh={() => fetchConversations(1, false, true)}
-            colors={["#2563eb"]}
-            tintColor="#2563eb"
+            colors={["#7c3aed"]}
+            tintColor="#7c3aed"
           />
         }
         onEndReached={handleLoadMore}
@@ -389,8 +394,8 @@ const ChatList = ({
         ListFooterComponent={renderFooter}
         ListHeaderComponent={
           <Pressable
-            className="flex-row items-center px-4 py-3 border-b border-gray-100 hover:bg-indigo-50 cursor-pointer"
-            style={{ backgroundColor: "#fafafe" }}
+            className={`flex-row items-center px-4 py-3 border-b border-gray-100 dark:border-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 cursor-pointer`}
+            style={{ backgroundColor: isDarkMode ? "#0f172a" : "#fafafe" }}
             onPress={() => router.push("/chat/ai")}
           >
             {/* AI Avatar */}

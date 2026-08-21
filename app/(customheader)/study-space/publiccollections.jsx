@@ -7,9 +7,11 @@ import axios from 'axios';
 import { router } from 'expo-router';
 
 import { useApiConfig } from "@/contexts/ApiConfigContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const PublicCollections = () => {
     const { getCleanUrl } = useApiConfig();
+    const { isDarkMode } = useTheme();
     const router = useRouter();
     const [searchQuery, setSearchQuery] = useState("");
     const [publicCollections, setPublicCollections] = useState([]);
@@ -80,19 +82,19 @@ const PublicCollections = () => {
     }, [])
 
     return (
-        <ScrollView className='flex-1 bg-gray-50' showsVerticalScrollIndicator={false}>
+        <ScrollView className='flex-1 bg-gray-50 dark:bg-slate-950' showsVerticalScrollIndicator={false}>
             {/* Header */}
-            <View className='w-full bg-white border-b border-gray-100 px-6 py-5 flex-row items-center justify-between shadow-sm'>
+            <View className='w-full bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 px-6 py-5 flex-row items-center justify-between shadow-sm'>
                 <View className='flex-row items-center gap-3'>
-                    <Pressable onPress={() => router.back()} className='p-1 rounded-full hover:bg-gray-100 active:scale-95 transition-all'>
-                        <Ionicons name="chevron-back" size={24} color="#1f2937" />
+                    <Pressable onPress={() => router.back()} className='p-1 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 active:scale-95 transition-all'>
+                        <Ionicons name="chevron-back" size={24} color={isDarkMode ? "#94a3b8" : "#1f2937"} />
                     </Pressable>
                     <View>
-                        <Text className='text-2xl font-black text-gray-900'>Public Collections</Text>
-                        <Text className='text-xs text-gray-500 mt-0.5'>Shared student libraries and notes</Text>
+                        <Text className='text-2xl font-black text-gray-900 dark:text-white'>Public Collections</Text>
+                        <Text className='text-xs text-gray-500 dark:text-slate-400 mt-0.5'>Shared student libraries and notes</Text>
                     </View>
                 </View>
-                <Pressable className='bg-blue-600 flex-row items-center gap-2 px-4 py-2.5 rounded-full shadow-sm hover:bg-blue-700 active:scale-95 transition-all'>
+                <Pressable className='bg-violet-600 flex-row items-center gap-2 px-4 py-2.5 rounded-full shadow-sm hover:bg-violet-700 active:scale-95 transition-all'>
                     <Ionicons name="add" size={20} color="white" />
                     <Text className='text-white font-semibold text-sm'>New Collection</Text>
                 </Pressable>
@@ -100,10 +102,10 @@ const PublicCollections = () => {
 
             {/* Search Section */}
             <View className='px-6 mb-4 mt-6'>
-                <View className='flex-row items-center bg-white border border-gray-200/80 rounded-2xl px-4 py-3 shadow-sm'>
+                <View className='flex-row items-center bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800/80 rounded-2xl px-4 py-3 shadow-sm'>
                     <Ionicons name="search-outline" size={20} color="#9ca3af" />
                     <TextInput
-                        className='flex-1 ml-3 text-sm text-gray-800'
+                        className='flex-1 ml-3 text-sm text-gray-800 dark:text-slate-200'
                         placeholder='Search public collections...'
                         placeholderTextColor='#9ca3af'
                         value={searchQuery}
@@ -124,7 +126,7 @@ const PublicCollections = () => {
                         <Pressable
                         onPress={()=>router.push(`/study-space/collection/${item.id}`)}
                             key={item.id}
-                            className="bg-white p-4 w-[47%] lg:w-[30%] rounded-2xl border border-gray-100 shadow-sm active:scale-[0.98] transition-all"
+                            className="bg-white dark:bg-slate-900 p-4 w-[47%] lg:w-[30%] rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm active:scale-[0.98] transition-all"
                         >
                             <View className='flex-row justify-between items-start mb-3'>
                                 <View className='bg-purple-50 p-2.5 rounded-xl'>
@@ -134,26 +136,26 @@ const PublicCollections = () => {
                                     <Ionicons name="people-outline" size={10} color="#a855f7" />
                                 </View>
                             </View>
-                            <Text className='font-bold text-gray-950 text-sm leading-5 mb-1' numberOfLines={2}>
+                            <Text className='font-bold text-gray-900 dark:text-white text-sm leading-5 mb-1' numberOfLines={2}>
                                 {item.name}
                             </Text>
-                            <Text className='text-xs text-purple-600 font-semibold mb-2'>
+                            <Text className='text-xs text-purple-600 dark:text-purple-400 font-semibold mb-2'>
                                 {item._count.books} books
                             </Text>
-                            <View className='flex-row items-center border-t border-gray-50 pt-2 mt-auto'>
-                                <View className='w-5 h-5 rounded-full bg-gray-200 items-center justify-center'>
-                                    <Text className='text-[8px] font-bold text-gray-600'>
+                            <View className='flex-row items-center border-t border-gray-100 dark:border-slate-800 pt-2 mt-auto'>
+                                <View className='w-5 h-5 rounded-full bg-gray-200 dark:bg-slate-700 items-center justify-center'>
+                                    <Text className='text-[8px] font-bold text-gray-600 dark:text-slate-300'>
                                         {item.owner.firstName.charAt(0) + item.owner.lastName.charAt(0)}
                                     </Text>
                                 </View>
-                                <Text className='text-[10px] text-gray-500 ml-1.5 font-medium' numberOfLines={1}>
+                                <Text className='text-[10px] text-gray-500 dark:text-slate-400 ml-1.5 font-medium' numberOfLines={1}>
                                     {item.owner.firstName + " " + item.owner.lastName}
                                 </Text>
                             </View>
                         </Pressable>
                     ))}
                     {filteredCollections.length === 0 && (
-                        <View className='w-full py-12 items-center bg-white rounded-2xl border border-dashed border-gray-200'>
+                        <View className='w-full py-12 items-center bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-gray-200 dark:border-slate-800'>
                             <Text className='text-sm text-gray-400'>No public collections found</Text>
                         </View>
                     )}

@@ -8,9 +8,11 @@ import { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 
 import { useApiConfig } from "@/contexts/ApiConfigContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const CreatePost = () => {
     const { getCleanUrl } = useApiConfig();
+    const { isDarkMode } = useTheme();
     const { user } = useUser();
 
     const [title, setTitle] = useState('');
@@ -83,29 +85,29 @@ const CreatePost = () => {
 
 
     return (
-        <View className="flex-1 bg-[#f5f6f8]">
-            <View className='flex-row justify-between items-center bg-white px-4 py-3 border-b border-gray-200'>
+        <View className="flex-1 bg-[#f5f6f8] dark:bg-slate-950">
+            <View className='flex-row justify-between items-center bg-white dark:bg-slate-900 px-4 py-3 border-b border-gray-200 dark:border-slate-800'>
                 <Pressable
                     onPress={() => {
                         if (router.canGoBack()) { router.back() }
                         else { router.replace("/home") }
                     }}
-                    className="p-1.5 rounded-full hover:bg-gray-100"
+                    className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800"
                 >
-                    <Ionicons name="close" size={22} color="#6b7280" />
+                    <Ionicons name="close" size={22} color={isDarkMode ? "#94a3b8" : "#6b7280"} />
                 </Pressable>
-                <Text className='text-base font-semibold text-gray-900'>Create Post</Text>
+                <Text className='text-base font-semibold text-gray-900 dark:text-white'>Create Post</Text>
                 <Pressable
                     disabled={description.trim().length === 0}
                     onPress={() => createPost()}
-                    className={`px-4 py-1.5 rounded-full ${description.trim().length === 0 ? 'bg-gray-200' : 'bg-blue-600'}`}
+                    className={`px-4 py-1.5 rounded-full ${description.trim().length === 0 ? 'bg-gray-200 dark:bg-slate-700' : 'bg-violet-600'}`}
                 >
-                    <Text className={`text-sm font-semibold ${description.trim().length === 0 ? 'text-gray-400' : 'text-white'}`}>Post</Text>
+                    <Text className={`text-sm font-semibold ${description.trim().length === 0 ? 'text-gray-400 dark:text-slate-500' : 'text-white'}`}>Post</Text>
                 </Pressable>
             </View>
             <View className='p-4'>
-                <TextInput onChangeText={(e) => setTitle(e)} placeholder='Title' placeholderTextColor="#9ca3af" className='text-lg font-semibold text-gray-900 mb-2' />
-                <TextInput onChangeText={(e) => setDescription(e)} placeholder="What's on your mind?" multiline={true} numberOfLines={10} placeholderTextColor="#9ca3af" className='text-sm text-gray-600 leading-5' />
+                <TextInput onChangeText={(e) => setTitle(e)} placeholder='Title' placeholderTextColor="#9ca3af" className='text-lg font-semibold text-gray-900 dark:text-white mb-2' />
+                <TextInput onChangeText={(e) => setDescription(e)} placeholder="What's on your mind?" multiline={true} numberOfLines={10} placeholderTextColor="#9ca3af" className='text-sm text-gray-600 dark:text-slate-300 leading-5' />
             </View>
             <View className='p-3 w-full justify-center items-center'>
                 <View className='w-full max-w-[500px]'>
@@ -113,9 +115,9 @@ const CreatePost = () => {
                 </View>
             </View>
 
-            <View className='flex-row items-center bg-white mt-auto border-t border-gray-200 py-3 px-4 gap-3'>
-                <Pressable onPress={() => pickImages()} className="p-2 rounded-full hover:bg-gray-100">
-                    <Ionicons name="image-outline" size={24} color="#6b7280" />
+            <View className='flex-row items-center bg-white dark:bg-slate-900 mt-auto border-t border-gray-200 dark:border-slate-800 py-3 px-4 gap-3'>
+                <Pressable onPress={() => pickImages()} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800">
+                    <Ionicons name="image-outline" size={24} color={isDarkMode ? "#94a3b8" : "#6b7280"} />
                 </Pressable>
             </View>
         </View>

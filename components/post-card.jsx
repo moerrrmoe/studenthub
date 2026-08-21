@@ -9,6 +9,7 @@ import { LayoutAnimation, Pressable, ScrollView, Text, TextInput, View } from "r
 import ImageCarousel from "./image-carousel";
 import { Card, CardContent, CardFooter, CardHeader } from "./ui/card";
 import { useApiConfig } from "@/contexts/ApiConfigContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const markdownStyles = {
   body: {
@@ -42,7 +43,7 @@ const markdownStyles = {
     marginBottom: 2,
   },
   link: {
-    color: "#2563eb",
+    color: "#7c3aed",
     textDecorationLine: "underline",
   },
   code_inline: {
@@ -115,6 +116,7 @@ const PostCard = ({
   isDetailView = false,
   createdAt
 }) => {
+  const { isDarkMode } = useTheme();
   const [isExpanded, setIsExpanded] = useState(false);
   // Added some mock data to show how the conversation UI looks
   const [aiConversation, setAiConversation] = useState([
@@ -131,6 +133,75 @@ const PostCard = ({
   const [isAiReasoning, setIsAiReasoning] = useState(false);
   const [shouldScroll, setShouldScroll] = useState(false);
   const scrollViewRef = useRef(null);
+
+  const dynamicMarkdownStyles = {
+    body: {
+      color: isDarkMode ? "#e2e8f0" : "#374151",
+      fontSize: 14,
+      lineHeight: 22,
+    },
+    paragraph: {
+      marginTop: 0,
+      marginBottom: 6,
+    },
+    heading1: {
+      fontSize: 18,
+      fontWeight: "bold",
+      color: isDarkMode ? "#f8fafc" : "#111827",
+      marginTop: 6,
+      marginBottom: 4,
+    },
+    heading2: {
+      fontSize: 16,
+      fontWeight: "bold",
+      color: isDarkMode ? "#f1f5f9" : "#1f2937",
+      marginTop: 6,
+      marginBottom: 4,
+    },
+    heading3: {
+      fontSize: 15,
+      fontWeight: "600",
+      color: isDarkMode ? "#e2e8f0" : "#374151",
+      marginTop: 4,
+      marginBottom: 2,
+    },
+    link: {
+      color: "#7c3aed",
+      textDecorationLine: "underline",
+    },
+    code_inline: {
+      backgroundColor: isDarkMode ? "#1e293b" : "#f3f4f6",
+      color: isDarkMode ? "#f1f5f9" : "#1f2937",
+      borderRadius: 4,
+      paddingHorizontal: 4,
+      fontFamily: "monospace",
+    },
+    code_block: {
+      backgroundColor: isDarkMode ? "#0f172a" : "#f8fafc",
+      borderColor: isDarkMode ? "#334155" : "#e2e8f0",
+      borderWidth: 1,
+      borderRadius: 8,
+      padding: 8,
+      marginVertical: 4,
+    },
+    fence: {
+      backgroundColor: isDarkMode ? "#0f172a" : "#f8fafc",
+      borderColor: isDarkMode ? "#334155" : "#e2e8f0",
+      borderWidth: 1,
+      borderRadius: 8,
+      padding: 8,
+      marginVertical: 4,
+    },
+    list_item: {
+      marginVertical: 2,
+    },
+    bullet_list: {
+      marginVertical: 4,
+    },
+    ordered_list: {
+      marginVertical: 4,
+    },
+  };
 
   useEffect(() => {
     if (shouldScroll && scrollViewRef.current) {
@@ -260,7 +331,7 @@ const PostCard = ({
     : rawBodyText;
 
   return (
-    <Card className="w-full bg-white border border-gray-200 rounded-xl my-2 shadow-xs overflow-hidden">
+    <Card className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl my-2 shadow-xs overflow-hidden">
       <CardHeader className="pb-2">
         <View className="flex-row items-center justify-between">
           <Pressable
@@ -269,10 +340,10 @@ const PostCard = ({
           >
             <Image
               source={{ uri: authorAvatar }}
-              className="w-10 h-10 rounded-full bg-gray-100"
+              className="w-10 h-10 rounded-full bg-gray-100 dark:bg-slate-800"
             />
             <View className="flex-1">
-              <Text className="text-sm font-semibold text-gray-900 leading-tight">
+              <Text className="text-sm font-semibold text-gray-900 dark:text-white leading-tight">
                 {authorName}
               </Text>
               <Text className="text-xs text-gray-400 mt-0.5">
@@ -280,7 +351,7 @@ const PostCard = ({
               </Text>
             </View>
           </Pressable>
-          <Pressable className="p-1.5 rounded-full hover:bg-gray-100">
+          <Pressable className="p-1.5 rounded-full hover:bg-gray-100 dark:bg-slate-800 dark:hover:bg-slate-800">
             <Ionicons name="ellipsis-horizontal" size={18} color="#9ca3af" />
           </Pressable>
         </View>
@@ -288,15 +359,15 @@ const PostCard = ({
 
       <CardContent>
         <View className="mb-4">
-          {postTitle ? <Text className="text-base font-semibold text-gray-900 mb-1.5">{postTitle}</Text> : null}
+          {postTitle ? <Text className="text-base font-semibold text-gray-900 dark:text-white mb-1.5">{postTitle}</Text> : null}
           {rawBodyText ? (
             <View className="gap-1">
-              <Markdown style={markdownStyles}>
+              <Markdown style={dynamicMarkdownStyles}>
                 {displayText}
               </Markdown>
               {!isDetailView && rawBodyText.length > 180 && (
                 <Pressable onPress={() => setIsExpanded(!isExpanded)} className="self-start">
-                  <Text className="text-blue-600 font-semibold text-sm">
+                  <Text className="text-violet-600 dark:text-violet-400 font-semibold text-sm">
                     {isExpanded ? "Show less" : "See more"}
                   </Text>
                 </Pressable>
@@ -310,60 +381,59 @@ const PostCard = ({
           <Image
             source={postImage}
             contentFit="cover"
-            className="w-full max-w-[850px] h-[400px] rounded-lg bg-gray-100"
+            className="w-full max-w-[850px] h-[400px] rounded-lg bg-gray-100 dark:bg-slate-800"
           />
         ) : null}
       </CardContent>
 
       <CardFooter>
-        <View className="flex-row gap-2 bg-gray-100 py-1.5 px-3 rounded-full items-center">
+        <View className="flex-row gap-2 bg-gray-100 dark:bg-slate-800 py-1.5 px-3 rounded-full items-center">
           <Pressable onPress={handleLike} className="p-1">
             {isLiked ? (
-              <FontAwesome name="thumbs-up" size={20} color="#2563eb" />
+              <FontAwesome name="thumbs-up" size={20} color="#7c3aed" />
             ) : (
-              <FontAwesome5 name="thumbs-up" size={18} color="#6b7280" />
+              <FontAwesome5 name="thumbs-up" size={18} color={isDarkMode ? "#cbd5e1" : "#6b7280"} />
             )}
           </Pressable>
-          <Text className="text-sm font-semibold text-gray-700">{likesCount}</Text>
-          <View className="w-px h-4 bg-gray-300" />
+          <Text className="text-sm font-semibold text-gray-700 dark:text-gray-300">{likesCount}</Text>
+          <View className="w-px h-4 bg-gray-300 dark:bg-slate-700" />
           <Pressable onPress={handleDislike} className="p-1">
             {isDisliked ? (
-              <FontAwesome name="thumbs-down" className="scale-x-[-1]" size={20} color="#2563eb" />
+              <FontAwesome name="thumbs-down" className="scale-x-[-1]" size={20} color="#7c3aed" />
             ) : (
-              <FontAwesome5 name="thumbs-down" className="scale-x-[-1]" size={18} color="#6b7280" />
+              <FontAwesome5 name="thumbs-down" className="scale-x-[-1]" size={18} color={isDarkMode ? "#cbd5e1" : "#6b7280"} />
             )}
           </Pressable>
         </View>
-        <Pressable onPress={() => router.push('/post/' + postId)} className="flex-row ml-3 py-1.5 px-3 bg-gray-100 rounded-full gap-2 items-center hover:bg-gray-200">
-          <Ionicons name="chatbubble-outline" size={18} color="#6b7280" />
-          <Text className="text-sm font-semibold text-gray-700">{commentsCount}</Text>
+        <Pressable onPress={() => router.push('/post/' + postId)} className="flex-row ml-3 py-1.5 px-3 bg-gray-100 dark:bg-slate-800 rounded-full gap-2 items-center hover:bg-gray-200 dark:hover:bg-slate-700">
+          <Ionicons name="chatbubble-outline" size={18} color={isDarkMode ? "#cbd5e1" : "#6b7280"} />
+          <Text className="text-sm font-semibold text-gray-700 dark:text-gray-300">{commentsCount}</Text>
         </Pressable>
 
         {/* Added toggle functionality to the Explain button */}
         <Pressable
           onPress={toggleAISection}
           className={`ml-auto flex-row items-center rounded-full px-3 py-1.5 gap-1.5 border ${isAIExplainPressed
-            ? 'bg-blue-100 border-blue-200'
-            : 'bg-gray-50 border-gray-200 hover:bg-blue-50 hover:border-blue-200'
+            ? 'bg-violet-100 border-violet-200 dark:bg-violet-950/40 dark:border-violet-900/50'
+            : 'bg-gray-50 dark:bg-slate-950 border-gray-200 dark:border-slate-800 dark:bg-slate-800 dark:border-slate-700 hover:bg-violet-50 hover:border-violet-200 dark:hover:bg-slate-700'
             }`}
         >
-          <Ionicons name="sparkles" size={16} color="#2563eb" />
-          <Text className="text-sm text-blue-600 font-semibold">Explain</Text>
+          <Ionicons name="sparkles" size={16} color="#7c3aed" />
+          <Text className="text-sm text-violet-600 dark:text-violet-400 font-semibold">Explain</Text>
         </Pressable>
       </CardFooter>
 
       {/* --- AI CHAT INTEGRATION --- */}
       {isAIExplainPressed && (
-        <View className="border-t border-gray-100 bg-gray-50 p-4 rounded-b-xl">
+        <View className="border-t border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900/60 p-4 rounded-b-xl">
 
           {/* Header */}
           <View className="flex-row items-center gap-2 mb-3">
-            <View className="w-6 h-6 rounded-full bg-blue-100 items-center justify-center">
-              <Ionicons name="sparkles" size={12} color="#2563eb" />
+            <View className="w-6 h-6 rounded-full bg-violet-100 dark:bg-violet-950/50 items-center justify-center">
+              <Ionicons name="sparkles" size={12} color="#7c3aed" />
             </View>
-            <Text className="font-semibold text-sm text-gray-700">AI Explainer</Text>
+            <Text className="font-semibold text-sm text-gray-700 dark:text-gray-300">AI Explainer</Text>
           </View>
-
 
           {/* Chat History */}
           <ScrollView ref={scrollViewRef} className="max-h-[250px] mb-3" showsVerticalScrollIndicator={false}>
@@ -371,29 +441,29 @@ const PostCard = ({
               <View
                 key={index}
                 className={`mb-2.5 p-3 rounded-2xl max-w-[85%] ${msg.role === 'user'
-                  ? 'bg-blue-600 self-end rounded-tr-sm'
-                  : 'bg-white border border-gray-200 self-start rounded-tl-sm'
+                  ? 'bg-violet-600 self-end rounded-tr-sm'
+                  : 'bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 self-start rounded-tl-sm'
                   }`}
               >
-                <Text className={`text-sm leading-5 ${msg.role === 'user' ? 'text-white' : 'text-gray-700'}`}>
+                <Text className={`text-sm leading-5 ${msg.role === 'user' ? 'text-white' : 'text-gray-700 dark:text-gray-200'}`}>
                   {msg.content}
                 </Text>
               </View>
             ))}
             {isAiReasoning && (
               <View className="flex-row items-center gap-2 ml-1 mb-2">
-                <View className="w-5 h-5 rounded-full bg-blue-100 items-center justify-center">
-                  <Ionicons name="sparkles" size={10} color="#2563eb" />
+                <View className="w-5 h-5 rounded-full bg-violet-100 dark:bg-violet-950/50 items-center justify-center">
+                  <Ionicons name="sparkles" size={10} color="#7c3aed" />
                 </View>
-                <Text className="text-gray-400 text-xs italic">Thinking...</Text>
+                <Text className="text-gray-400 dark:text-gray-500 text-xs italic">Thinking...</Text>
               </View>
             )}
           </ScrollView>
 
           {/* Chat Input */}
-          <View className="flex-row items-center bg-white border border-gray-200 rounded-full pl-4 pr-1.5 py-1">
+          <View className="flex-row items-center bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full pl-4 pr-1.5 py-1">
             <TextInput
-              className="flex-1 py-2 text-sm text-gray-800"
+              className="flex-1 py-2 text-sm text-gray-800 dark:text-white"
               placeholder="Ask a follow-up question..."
               placeholderTextColor="#9ca3af"
               value={inputText}
@@ -402,7 +472,7 @@ const PostCard = ({
             />
             <Pressable
               onPress={handleSendMessage}
-              className={`p-2 rounded-full ${inputText.trim() ? 'bg-blue-600' : 'bg-gray-200'}`}
+              className={`p-2 rounded-full ${inputText.trim() ? 'bg-violet-600' : 'bg-gray-200 dark:bg-slate-800'}`}
               disabled={!inputText.trim()}
             >
               <Ionicons name="arrow-up" size={16} color="white" />

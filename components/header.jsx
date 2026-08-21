@@ -7,6 +7,7 @@ import React, { useEffect, useState } from "react";
 import { Modal, Pressable, ScrollView, Text, View, TextInput } from "react-native";
 import SearchInput from "./SearchInput";
 import { useApiConfig } from "@/contexts/ApiConfigContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const MOBILE_NAV_ITEMS = [
   {
@@ -77,6 +78,7 @@ const Header = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [dbUser, setDbUser] = useState(null);
 
+  const { isDarkMode, toggleTheme } = useTheme();
   const { apiUrl, updateApiUrl, resetToDefault, getCleanUrl } = useApiConfig();
   const [isDevModalOpen, setIsDevModalOpen] = useState(false);
   const [inputUrl, setInputUrl] = useState(apiUrl);
@@ -134,20 +136,20 @@ const Header = () => {
     : (user?.imageUrl ||
       `https://ui-avatars.com/api/?name=${encodeURIComponent(
         user?.fullName || "User"
-      )}&background=2563eb&color=fff`);
+      )}&background=7c3aed&color=fff`);
 
   return (
     <>
-      <View className="flex-row border-b justify-between border-gray-200 bg-white h-[60px] w-full items-center px-4 z-10">
+      <View className="flex-row border-b justify-between border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-[60px] w-full items-center px-4 z-10">
         {showMobileSearch ? (
-          <View className="absolute inset-0 flex items-center justify-center bg-white z-20 px-3">
+          <View className="absolute inset-0 flex items-center justify-center bg-white dark:bg-slate-900 z-20 px-3">
             <View className="flex-row items-center gap-2 w-full">
               <View className="flex-1">
                 <SearchInput />
               </View>
               <Pressable
                 onPress={() => setShowMobileSearch(false)}
-                className="p-2 rounded-full hover:bg-gray-100"
+                className="p-2 rounded-full hover:bg-gray-100 dark:bg-slate-800"
               >
                 <Ionicons name="close-outline" size={24} color="#6b7280" />
               </Pressable>
@@ -158,18 +160,21 @@ const Header = () => {
             {/* Left: Mobile Hamburger & Logo */}
             <View className="flex-row items-center gap-2">
               <Pressable
-                className="p-1.5 rounded-lg hover:bg-gray-100 lg:hidden"
+                className="p-1.5 rounded-lg hover:bg-gray-100 dark:bg-slate-800 dark:hover:bg-slate-800 lg:hidden"
                 onPress={() => setIsMenuOpen(true)}
               >
-                <Ionicons name="menu-outline" size={24} color="#374151" />
+                <Ionicons name="menu-outline" size={24} color={isDarkMode ? "#d1d5db" : "#374151"} />
               </Pressable>
 
               <Pressable
                 onPress={() => router.push("/home")}
-                className="cursor-pointer"
+                className="cursor-pointer flex-row items-center gap-2"
               >
-                <Text className="text-lg text-blue-600 font-bold tracking-tight">
-                  StudentHub
+                <View className="w-8 h-8 rounded-lg bg-violet-600 items-center justify-center shadow-md shadow-violet-500/20">
+                  <Ionicons name="school" size={18} color="#ffffff" />
+                </View>
+                <Text className="text-lg text-slate-900 dark:text-white font-extrabold tracking-tight">
+                  Student<Text className="text-violet-600">Hub</Text>
                 </Text>
               </Pressable>
             </View>
@@ -182,20 +187,32 @@ const Header = () => {
             {/* Right: Actions */}
             <View className="flex-row justify-end items-center gap-1.5">
               <Pressable
-                className="p-2 rounded-full hover:bg-gray-100 lg:hidden cursor-pointer"
+                className="p-2 rounded-full hover:bg-gray-100 dark:bg-slate-800 dark:hover:bg-slate-800 lg:hidden cursor-pointer"
                 onPress={() => setShowMobileSearch(true)}
               >
-                <Ionicons name="search-outline" size={20} color="#6b7280" />
+                <Ionicons name="search-outline" size={20} color={isDarkMode ? "#9ca3af" : "#6b7280"} />
+              </Pressable>
+
+              {/* Theme Toggle Button */}
+              <Pressable
+                className="p-2 rounded-full hover:bg-gray-100 dark:bg-slate-800 dark:hover:bg-slate-800 cursor-pointer"
+                onPress={toggleTheme}
+              >
+                <Ionicons
+                  name={isDarkMode ? "sunny" : "moon"}
+                  size={20}
+                  color={isDarkMode ? "#fbbf24" : "#6b7280"}
+                />
               </Pressable>
 
               <Pressable
-                className="p-2 rounded-full hover:bg-gray-100 cursor-pointer"
+                className="p-2 rounded-full hover:bg-gray-100 dark:bg-slate-800 dark:hover:bg-slate-800 cursor-pointer"
                 onPress={() => router.push("/chat")}
               >
                 <Ionicons
                   name="chatbubble-ellipses-outline"
                   size={20}
-                  color="#6b7280"
+                  color={isDarkMode ? "#9ca3af" : "#6b7280"}
                 />
               </Pressable>
 
@@ -205,7 +222,7 @@ const Header = () => {
               >
                 <Image
                   source={{ uri: avatarUrl }}
-                  className="w-8 h-8 rounded-full border border-gray-200"
+                  className="w-8 h-8 rounded-full border border-gray-200 dark:border-slate-800"
                 />
               </Pressable>
             </View>
@@ -222,37 +239,37 @@ const Header = () => {
       >
         <View className="flex-1 bg-black/40 flex-row">
           {/* Drawer Content */}
-          <View className="w-[300px] max-w-[85%] bg-white h-full shadow-2xl flex-col">
+          <View className="w-[300px] max-w-[85%] bg-white dark:bg-slate-900 h-full shadow-2xl flex-col">
             {/* Drawer Header */}
-            <View className="flex-row items-center justify-between px-5 py-4 border-b border-gray-100">
+            <View className="flex-row items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-800">
               <View className="flex-row items-center gap-2">
-                <View className="w-8 h-8 rounded-lg bg-blue-600 items-center justify-center">
+                <View className="w-8 h-8 rounded-lg bg-violet-600 items-center justify-center">
                   <Ionicons name="school" size={18} color="white" />
                 </View>
-                <Text className="text-base font-bold text-gray-900">
-                  StudentHub
+                <Text className="text-base text-slate-900 dark:text-white font-extrabold tracking-tight">
+                  Student<Text className="text-violet-600">Hub</Text>
                 </Text>
               </View>
               <Pressable
                 onPress={() => setIsMenuOpen(false)}
-                className="p-1 rounded-full hover:bg-gray-100"
+                className="p-1 rounded-full hover:bg-gray-100 dark:bg-slate-800 dark:hover:bg-slate-800"
               >
-                <Ionicons name="close" size={22} color="#6b7280" />
+                <Ionicons name="close" size={22} color={isDarkMode ? "#9ca3af" : "#6b7280"} />
               </Pressable>
             </View>
 
             {/* User Profile Snippet */}
             <Pressable
               onPress={() => handleNavigate("/profile/me")}
-              className="flex-row items-center gap-3 px-5 py-4 bg-gray-50/80 border-b border-gray-100"
+              className="flex-row items-center gap-3 px-5 py-4 bg-gray-50 dark:bg-slate-950/80 dark:bg-slate-800/40 border-b border-gray-100 dark:border-slate-800"
             >
               <Image
                 source={{ uri: avatarUrl }}
-                className="w-11 h-11 rounded-full border border-gray-200"
+                className="w-11 h-11 rounded-full border border-gray-200 dark:border-slate-700"
               />
               <View className="flex-1">
                 <Text
-                  className="text-sm font-semibold text-gray-900"
+                  className="text-sm font-semibold text-gray-900 dark:text-white"
                   numberOfLines={1}
                 >
                   {user?.fullName ||
@@ -260,13 +277,13 @@ const Header = () => {
                     "StudentHub User"}
                 </Text>
                 <Text
-                  className="text-xs text-gray-500"
+                  className="text-xs text-gray-500 dark:text-gray-400"
                   numberOfLines={1}
                 >
                   {user?.primaryEmailAddress?.emailAddress || "View Profile"}
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={16} color="#9ca3af" />
+              <Ionicons name="chevron-forward" size={16} color={isDarkMode ? "#6b7280" : "#9ca3af"} />
             </Pressable>
 
             {/* Nav Items Scroll */}
@@ -286,20 +303,20 @@ const Header = () => {
                     key={item.key}
                     onPress={() => handleNavigate(item.route)}
                     className={`flex-row items-center justify-between px-3 py-3 rounded-xl mb-1 ${
-                      isActive ? "bg-blue-50" : "hover:bg-gray-50 active:bg-gray-100"
+                      isActive ? "bg-violet-50 dark:bg-violet-950/40" : "hover:bg-gray-50 dark:bg-slate-950 active:bg-gray-100 dark:bg-slate-800 dark:hover:bg-slate-800 dark:active:bg-slate-800"
                     }`}
                   >
                     <View className="flex-row items-center gap-3">
                       <Ionicons
                         name={isActive ? item.activeIcon : item.icon}
                         size={20}
-                        color={isActive ? "#2563eb" : "#4b5563"}
+                        color={isActive ? "#7c3aed" : (isDarkMode ? "#9ca3af" : "#4b5563")}
                       />
                       <Text
                         className={`text-sm ${
                           isActive
-                            ? "font-semibold text-blue-600"
-                            : "font-medium text-gray-700"
+                            ? "font-semibold text-violet-600 dark:text-violet-400"
+                            : "font-medium text-gray-700 dark:text-gray-300"
                         }`}
                       >
                         {item.label}
@@ -318,27 +335,46 @@ const Header = () => {
               })}
             </ScrollView>
 
-            {/* Bottom Actions: Log Out & Dev Settings */}
-            <View className="p-4 border-t border-gray-100 bg-gray-50/50 flex-col gap-2">
+            {/* Bottom Actions: Log Out, Dev Settings & Dark Mode */}
+            <View className="p-4 border-t border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-950/50 dark:bg-slate-900/50 flex-col gap-2">
+              <Pressable
+                onPress={toggleTheme}
+                className="flex-row items-center justify-between py-3 px-4 rounded-xl bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 active:bg-gray-200 dark:active:bg-slate-700 cursor-pointer"
+              >
+                <View className="flex-row items-center gap-2">
+                  <Ionicons
+                    name={isDarkMode ? "sunny" : "moon"}
+                    size={20}
+                    color={isDarkMode ? "#fbbf24" : "#4b5563"}
+                  />
+                  <Text className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                    Dark Mode
+                  </Text>
+                </View>
+                <Text className="text-xs text-gray-400 font-medium">
+                  {isDarkMode ? "On" : "Off"}
+                </Text>
+              </Pressable>
+
               <Pressable
                 onPress={() => {
                   setInputUrl(apiUrl);
                   setIsDevModalOpen(true);
                 }}
-                className="flex-row items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gray-100 border border-gray-200 active:bg-gray-200 cursor-pointer"
+                className="flex-row items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 active:bg-gray-200 dark:active:bg-slate-700 cursor-pointer"
               >
-                <Ionicons name="construct-outline" size={20} color="#4b5563" />
-                <Text className="text-sm font-semibold text-gray-700">
+                <Ionicons name="construct-outline" size={20} color={isDarkMode ? "#9ca3af" : "#4b5563"} />
+                <Text className="text-sm font-semibold text-gray-700 dark:text-gray-200">
                   Dev Server Settings
                 </Text>
               </Pressable>
 
               <Pressable
                 onPress={handleSignOut}
-                className="flex-row items-center justify-center gap-2 py-3 px-4 rounded-xl bg-red-50 border border-red-200 active:bg-red-100 cursor-pointer"
+                className="flex-row items-center justify-center gap-2 py-3 px-4 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 active:bg-red-100 dark:active:bg-red-950/40 cursor-pointer"
               >
                 <Ionicons name="log-out-outline" size={20} color="#dc2626" />
-                <Text className="text-sm font-semibold text-red-600">
+                <Text className="text-sm font-semibold text-red-600 dark:text-red-400">
                   Log Out
                 </Text>
               </Pressable>
@@ -361,8 +397,8 @@ const Header = () => {
         onRequestClose={() => setIsDevModalOpen(false)}
       >
         <View className="flex-1 justify-center items-center bg-black/50 px-4">
-          <View className="w-full max-w-[400px] bg-white rounded-2xl p-6 shadow-2xl">
-            <Text className="text-lg font-bold text-gray-900 mb-2">Dev Server Settings</Text>
+          <View className="w-full max-w-[400px] bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-2xl">
+            <Text className="text-lg font-bold text-gray-900 dark:text-white mb-2">Dev Server Settings</Text>
             <Text className="text-xs text-gray-500 mb-4">
               Enter your backend API server URL. Use your PC's IP address (e.g. http://192.168.x.x:8080) to test on a physical debug device.
             </Text>
@@ -372,7 +408,7 @@ const Header = () => {
               onChangeText={setInputUrl}
               placeholder="http://localhost:8080"
               placeholderTextColor="#9ca3af"
-              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-800 mb-4"
+              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm text-gray-800 dark:text-slate-200 mb-4"
               autoCapitalize="none"
               autoCorrect={false}
             />
@@ -384,7 +420,7 @@ const Header = () => {
                   setIsDevModalOpen(false);
                   setIsMenuOpen(false);
                 }}
-                className="flex-1 bg-blue-600 py-3 rounded-xl items-center"
+                className="flex-1 bg-violet-600 py-3 rounded-xl items-center"
               >
                 <Text className="text-white text-sm font-semibold">Save</Text>
               </Pressable>
@@ -394,9 +430,9 @@ const Header = () => {
                   setIsDevModalOpen(false);
                   setIsMenuOpen(false);
                 }}
-                className="flex-1 bg-gray-100 py-3 rounded-xl items-center border border-gray-200"
+                className="flex-1 bg-gray-100 dark:bg-slate-800 py-3 rounded-xl items-center border border-gray-200 dark:border-slate-800"
               >
-                <Text className="text-gray-700 text-sm font-semibold">Reset</Text>
+                <Text className="text-gray-700 dark:text-slate-300 text-sm font-semibold">Reset</Text>
               </Pressable>
             </View>
 

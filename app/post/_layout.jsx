@@ -8,10 +8,10 @@ export default function PostLayout() {
     return (
         <>
             <Header />
-            <View className="flex-1 flex-row">
+            <View className="flex-1 flex-row bg-[#f5f6f8] dark:bg-slate-950">
                 <SidebarDock />
-                <View className="flex-1">
-                    <Stack>
+                <View className="flex-1 bg-[#f5f6f8] dark:bg-slate-950">
+                    <Stack screenOptions={{ contentStyle: { backgroundColor: "transparent" } }}>
                         <Stack.Screen name="[id]" options={{ headerShown: false }} />
                     </Stack>
                 </View>

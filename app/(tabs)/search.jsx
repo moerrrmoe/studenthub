@@ -16,6 +16,7 @@ import {
 } from "react-native";
 
 import { useApiConfig } from "@/contexts/ApiConfigContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const POPULAR_TAGS = [
   "All",
@@ -29,6 +30,7 @@ const POPULAR_TAGS = [
 
 export default function SearchScreen() {
   const { getCleanUrl } = useApiConfig();
+  const { isDarkMode } = useTheme();
   const params = useLocalSearchParams();
   const activeQuery = (params.query || params.q || "").toString().trim();
   const { user } = useUser();
@@ -257,27 +259,27 @@ export default function SearchScreen() {
   const renderListHeader = () => (
     <View className="w-full max-w-[700px] self-center pt-3 pb-2 px-2">
       {/* Search Header Banner */}
-      <View className="flex-row items-center justify-between bg-white border border-gray-200 rounded-xl px-4 py-3 mb-3 shadow-xs">
+      <View className="flex-row items-center justify-between bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-3 mb-3 shadow-xs">
         <View className="flex-row items-center gap-2.5 flex-1 mr-2">
-          <View className="w-8 h-8 rounded-full bg-blue-50 items-center justify-center">
+          <View className="w-8 h-8 rounded-full bg-violet-50 dark:bg-violet-950/40 items-center justify-center">
             <Ionicons
               name={activeQuery ? "search" : "compass-outline"}
               size={18}
-              color="#2563eb"
+              color="#7c3aed"
             />
           </View>
           <View className="flex-1">
-            <Text className="text-xs text-gray-400 font-medium">
+            <Text className="text-xs text-gray-400 dark:text-slate-500 font-medium">
               {activeQuery ? "Search Results" : "Explore StudentHub"}
             </Text>
             <Text
-              className="text-sm font-semibold text-gray-900 leading-tight"
+              className="text-sm font-semibold text-gray-900 dark:text-white leading-tight"
               numberOfLines={1}
             >
               {activeQuery ? (
                 <>
                   Results for{" "}
-                  <Text className="text-blue-600 font-bold">
+                  <Text className="text-violet-600 font-bold">
                     {`"${activeQuery}"`}
                   </Text>
                 </>
@@ -291,32 +293,32 @@ export default function SearchScreen() {
         {activeQuery ? (
           <Pressable
             onPress={handleClearQuery}
-            className="flex-row items-center gap-1 bg-gray-100 active:bg-gray-200 px-3 py-1.5 rounded-full"
+            className="flex-row items-center gap-1 bg-gray-100 dark:bg-slate-800 active:bg-gray-200 px-3 py-1.5 rounded-full"
           >
-            <Ionicons name="close" size={14} color="#4b5563" />
-            <Text className="text-xs font-medium text-gray-600">Clear</Text>
+            <Ionicons name="close" size={14} color={isDarkMode ? "#94a3b8" : "#4b5563"} />
+            <Text className="text-xs font-medium text-gray-600 dark:text-slate-300">Clear</Text>
           </Pressable>
         ) : null}
       </View>
 
       {/* Tab Switcher: Posts vs People */}
-      <View className="flex-row bg-gray-200/80 p-1 rounded-xl mb-3">
+      <View className="flex-row bg-gray-200/80 dark:bg-slate-800 p-1 rounded-xl mb-3">
         <Pressable
           onPress={() => setActiveTab("posts")}
           className={`flex-1 flex-row items-center justify-center py-2 rounded-lg gap-2 transition-all ${
             activeTab === "posts"
-              ? "bg-white shadow-xs"
+              ? "bg-white dark:bg-slate-900 shadow-xs"
               : "active:bg-gray-300/50"
           }`}
         >
           <Ionicons
             name="document-text-outline"
             size={16}
-            color={activeTab === "posts" ? "#2563eb" : "#6b7280"}
+            color={activeTab === "posts" ? "#7c3aed" : "#6b7280"}
           />
           <Text
             className={`text-sm font-semibold ${
-              activeTab === "posts" ? "text-blue-600" : "text-gray-600"
+              activeTab === "posts" ? "text-violet-600" : "text-gray-600 dark:text-slate-400"
             }`}
           >
             Posts
@@ -327,18 +329,18 @@ export default function SearchScreen() {
           onPress={() => setActiveTab("users")}
           className={`flex-1 flex-row items-center justify-center py-2 rounded-lg gap-2 transition-all ${
             activeTab === "users"
-              ? "bg-white shadow-xs"
+              ? "bg-white dark:bg-slate-900 shadow-xs"
               : "active:bg-gray-300/50"
           }`}
         >
           <Ionicons
             name="people-outline"
             size={16}
-            color={activeTab === "users" ? "#2563eb" : "#6b7280"}
+            color={activeTab === "users" ? "#7c3aed" : "#6b7280"}
           />
           <Text
             className={`text-sm font-semibold ${
-              activeTab === "users" ? "text-blue-600" : "text-gray-600"
+              activeTab === "users" ? "text-violet-600" : "text-gray-600 dark:text-slate-400"
             }`}
           >
             People
@@ -365,15 +367,15 @@ export default function SearchScreen() {
                   onPress={() => handleSelectTag(tag)}
                   className={`px-3.5 py-1.5 rounded-full border transition-all ${
                     isSelected
-                      ? "bg-blue-600 border-blue-600 shadow-xs"
-                      : "bg-white border-gray-200 hover:bg-gray-100"
+                      ? "bg-violet-600 border-violet-600 shadow-xs"
+                      : "bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700 hover:bg-gray-100 dark:hover:bg-slate-800"
                   }`}
                 >
                   <Text
                     className={`text-xs font-medium ${
                       isSelected
                         ? "text-white font-semibold"
-                        : "text-gray-700"
+                        : "text-gray-700 dark:text-slate-300"
                     }`}
                   >
                     {tag === "All" ? "🔥 All Posts" : `#${tag}`}
@@ -399,8 +401,8 @@ export default function SearchScreen() {
     if (isCurrentLoadingMore) {
       return (
         <View className="py-6 items-center justify-center">
-          <ActivityIndicator size="small" color="#2563eb" />
-          <Text className="text-xs text-gray-400 mt-2 font-medium">
+          <ActivityIndicator size="small" color="#7c3aed" />
+          <Text className="text-xs text-gray-400 dark:text-slate-500 mt-2 font-medium">
             Loading more {activeTab}...
           </Text>
         </View>
@@ -410,8 +412,8 @@ export default function SearchScreen() {
     if (currentMeta?.isLastPage && currentLength > 0 && !isCurrentLoading) {
       return (
         <View className="py-8 items-center justify-center">
-          <View className="h-px bg-gray-200 w-24 mb-3" />
-          <Text className="text-xs text-gray-400 font-medium">
+          <View className="h-px bg-gray-200 dark:bg-slate-800 w-24 mb-3" />
+          <Text className="text-xs text-gray-400 dark:text-slate-500 font-medium">
             {"You've reached the end of results"}
           </Text>
         </View>
@@ -431,11 +433,11 @@ export default function SearchScreen() {
 
     if (currentError) {
       return (
-        <View className="w-full max-w-[500px] self-center items-center justify-center py-16 px-6 bg-white rounded-2xl border border-gray-200 my-4 shadow-xs">
+        <View className="w-full max-w-[500px] self-center items-center justify-center py-16 px-6 bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 my-4 shadow-xs">
           <View className="w-14 h-14 rounded-full bg-red-50 items-center justify-center mb-4">
             <Ionicons name="alert-circle-outline" size={28} color="#ef4444" />
           </View>
-          <Text className="text-base font-semibold text-gray-900 mb-1 text-center">
+          <Text className="text-base font-semibold text-gray-900 dark:text-white mb-1 text-center">
             Something went wrong
           </Text>
           <Text className="text-xs text-gray-500 text-center mb-5 leading-5">
@@ -446,7 +448,7 @@ export default function SearchScreen() {
               if (activeTab === "posts") fetchPosts(activeQuery, 1, false);
               else fetchUsers(activeQuery, 1, false);
             }}
-            className="flex-row items-center gap-2 bg-blue-600 px-5 py-2.5 rounded-full active:bg-blue-700"
+            className="flex-row items-center gap-2 bg-violet-600 px-5 py-2.5 rounded-full active:bg-violet-700"
           >
             <Ionicons name="refresh" size={16} color="white" />
             <Text className="text-xs font-semibold text-white">Try Again</Text>
@@ -456,8 +458,8 @@ export default function SearchScreen() {
     }
 
     return (
-      <View className="w-full max-w-[500px] self-center items-center justify-center py-16 px-6 bg-white rounded-2xl border border-gray-200 my-4 shadow-xs">
-        <View className="w-16 h-16 rounded-full bg-blue-50 items-center justify-center mb-4">
+      <View className="w-full max-w-[500px] self-center items-center justify-center py-16 px-6 bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 my-4 shadow-xs">
+        <View className="w-16 h-16 rounded-full bg-violet-50 items-center justify-center mb-4">
           <Ionicons
             name={
               activeTab === "posts"
@@ -465,10 +467,10 @@ export default function SearchScreen() {
                 : "person-circle-outline"
             }
             size={36}
-            color="#3b82f6"
+            color="#8b5cf6"
           />
         </View>
-        <Text className="text-base font-bold text-gray-900 mb-1.5 text-center">
+        <Text className="text-base font-bold text-gray-900 dark:text-white mb-1.5 text-center">
           {activeTab === "posts" ? "No posts found" : "No users found"}
         </Text>
         <Text className="text-xs text-gray-500 text-center mb-6 leading-5">
@@ -487,9 +489,9 @@ export default function SearchScreen() {
                 <Pressable
                   key={tag}
                   onPress={() => handleSelectTag(tag)}
-                  className="bg-gray-100 active:bg-blue-50 border border-gray-200 px-3.5 py-1.5 rounded-full"
+                  className="bg-gray-100 dark:bg-slate-800 active:bg-violet-50 border border-gray-200 dark:border-slate-800 px-3.5 py-1.5 rounded-full"
                 >
-                  <Text className="text-xs font-medium text-gray-700">
+                  <Text className="text-xs font-medium text-gray-700 dark:text-slate-300">
                     #{tag}
                   </Text>
                 </Pressable>
@@ -554,24 +556,24 @@ export default function SearchScreen() {
       <View className="w-full max-w-[700px] self-center mb-2.5">
         <Pressable
           onPress={() => router.push(`/profile/${item.id}`)}
-          className="bg-white border border-gray-200 rounded-xl p-4 flex-row items-center justify-between shadow-xs hover:border-gray-300 active:bg-gray-50"
+          className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl p-4 flex-row items-center justify-between shadow-xs hover:border-gray-300 active:bg-gray-50 dark:active:bg-slate-800"
         >
           <View className="flex-row items-center gap-3.5 flex-1 mr-3">
             <Image
               source={{ uri: avatarUri }}
-              className="w-12 h-12 rounded-full bg-gray-100 border border-gray-200"
+              className="w-12 h-12 rounded-full bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-800"
             />
             <View className="flex-1">
               <View className="flex-row items-center gap-2">
                 <Text
-                  className="text-base font-bold text-gray-900 leading-tight"
+                  className="text-base font-bold text-gray-900 dark:text-white leading-tight"
                   numberOfLines={1}
                 >
                   {fullName}
                 </Text>
                 {item.role === "admin" && (
-                  <View className="bg-blue-100 px-2 py-0.5 rounded-full">
-                    <Text className="text-[10px] font-bold text-blue-700">
+                  <View className="bg-violet-100 px-2 py-0.5 rounded-full">
+                    <Text className="text-[10px] font-bold text-violet-700">
                       ADMIN
                     </Text>
                   </View>
@@ -580,14 +582,14 @@ export default function SearchScreen() {
 
               {item.profile?.bio ? (
                 <Text
-                  className="text-xs text-gray-600 mt-0.5"
+                  className="text-xs text-gray-600 dark:text-slate-400 mt-0.5"
                   numberOfLines={1}
                 >
                   {item.profile.bio}
                 </Text>
               ) : (
                 <Text
-                  className="text-xs text-gray-400 mt-0.5"
+                  className="text-xs text-gray-400 dark:text-slate-500 mt-0.5"
                   numberOfLines={1}
                 >
                   {item.email}
@@ -597,14 +599,14 @@ export default function SearchScreen() {
               {/* Stats counts */}
               <View className="flex-row items-center gap-4 mt-2">
                 <View className="flex-row items-center gap-1">
-                  <Ionicons name="document-text-outline" size={13} color="#9ca3af" />
-                  <Text className="text-xs text-gray-500 font-medium">
+                  <Ionicons name="document-text-outline" size={13} color={isDarkMode ? "#475569" : "#9ca3af"} />
+                  <Text className="text-xs text-gray-500 dark:text-slate-400 font-medium">
                     {item._count?.posts || 0} posts
                   </Text>
                 </View>
                 <View className="flex-row items-center gap-1">
-                  <Ionicons name="people-outline" size={13} color="#9ca3af" />
-                  <Text className="text-xs text-gray-500 font-medium">
+                  <Ionicons name="people-outline" size={13} color={isDarkMode ? "#475569" : "#9ca3af"} />
+                  <Text className="text-xs text-gray-500 dark:text-slate-400 font-medium">
                     {item._count?.follower || 0} followers
                   </Text>
                 </View>
@@ -617,13 +619,13 @@ export default function SearchScreen() {
             onPress={() => router.push(`/profile/${item.id}`)}
             className={`px-4 py-2 rounded-full flex-row items-center gap-1.5 ${
               isCurrentUser
-                ? "bg-gray-100 active:bg-gray-200"
-                : "bg-blue-600 active:bg-blue-700"
+                ? "bg-gray-100 dark:bg-slate-800 active:bg-gray-200"
+                : "bg-violet-600 active:bg-violet-700"
             }`}
           >
             <Text
               className={`text-xs font-semibold ${
-                isCurrentUser ? "text-gray-700" : "text-white"
+                isCurrentUser ? "text-gray-700 dark:text-slate-300" : "text-white"
               }`}
             >
               {isCurrentUser ? "My Profile" : "View"}
@@ -646,11 +648,11 @@ export default function SearchScreen() {
   const currentData = activeTab === "posts" ? posts : users;
 
   return (
-    <View className="flex-1 w-full bg-[#f5f6f8]">
+    <View className="flex-1 w-full bg-[#f5f6f8] dark:bg-slate-950">
       {isCurrentLoading && !isCurrentRefreshing && currentData.length === 0 ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#2563eb" />
-          <Text className="text-xs text-gray-500 font-medium mt-3">
+          <ActivityIndicator size="large" color="#7c3aed" />
+          <Text className="text-xs text-gray-500 dark:text-slate-400 font-medium mt-3">
             Loading {activeTab}...
           </Text>
         </View>
@@ -670,8 +672,8 @@ export default function SearchScreen() {
             <RefreshControl
               refreshing={isCurrentRefreshing}
               onRefresh={handleRefresh}
-              colors={["#2563eb"]}
-              tintColor="#2563eb"
+              colors={["#7c3aed"]}
+              tintColor="#7c3aed"
             />
           }
           onEndReached={handleLoadMore}

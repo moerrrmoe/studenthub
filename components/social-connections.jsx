@@ -84,7 +84,7 @@ function SocialButton({ strategy }) {
     <Button
       variant="outline"
       size="sm"
-      className="flex-1 bg-white border-slate-200 hover:bg-slate-50 active:bg-slate-100 h-11 rounded-xl shadow-xs justify-center items-center"
+      className="flex-1 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-slate-50 active:bg-slate-100 h-11 rounded-xl shadow-xs justify-center items-center"
       onPress={onPress}
     >
       <Image

@@ -23,6 +23,7 @@ import ChatList from "../chat-list";
 import AiChat from "./ai-chat";
 
 import { useApiConfig } from "@/contexts/ApiConfigContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const EMOJI_CATEGORIES = {
   smileys: ["😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇", "🙂", "🙃", "😉", "😌", "😍", "🥰", "😘", "😗", "😙", "😚", "😋", "😛", "😝", "😜", "🤪", "🤨", "🧐", "🤓", "😎", "🤩", "🥳", "😏", "😒", "😞", "😔", "😟", "😕", "🙁", "☹️", "😣", "😖", "😫", "😩", "🥺", "😢", "😭", "😤", "😠", "😡", "🤬", "🤯", "😳", "🥵", "🥶", "😱", "😨", "😰", "😥", "😓", "🤗", "🤔", "🤭", "🤫", "🤥", "😶", "😐", "😑", "😬", "🙄", "😯", "😦", "😧", "😮", "😲", "🥱", "😴", "🤤", "😪", "😵", "🤐", "🥴", "🤢", "🤮", "🤧", "😷", "🤒", "🤕", "🤠", "😈", "👿", "👹", "👺", "💩", "👻", "💀", "👽", "👾", "🤖"],
@@ -32,6 +33,7 @@ const EMOJI_CATEGORIES = {
 
 const ChatContainer = ({ chatId }) => {
   const { getCleanUrl } = useApiConfig();
+  const { isDarkMode } = useTheme();
   const router = useRouter();
   const { getToken } = useAuth();
   const { user } = useUser();
@@ -372,7 +374,7 @@ const ChatContainer = ({ chatId }) => {
       >
         {!isMe && chatType == 'group' && (
           <Image
-            className={"w-8 h-8 mr-2 rounded-full border border-blue-500 shrink-0"}
+            className={"w-8 h-8 mr-2 rounded-full border border-violet-500 shrink-0"}
             source={{
               uri: getAvatarUrl(
                 chatDetails?.members?.find((member) => member.userId == item.senderId)?.user?.profile?.avatar,
@@ -381,12 +383,12 @@ const ChatContainer = ({ chatId }) => {
             }}
           />
         )}
-        <View className={`rounded-2xl px-4 py-2.5 my-1 shrink ${isMe ? "bg-blue-600 rounded-tr-sm" : "bg-white border border-gray-100 rounded-tl-sm"}`}>
-          <Text className={`text-sm leading-5 ${isMe ? "text-white" : "text-gray-800"}`}>
+        <View className={`rounded-2xl px-4 py-2.5 my-1 shrink ${isMe ? "bg-violet-600 rounded-tr-sm" : "bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-tl-sm"}`}>
+          <Text className={`text-sm leading-5 ${isMe ? "text-white" : "text-gray-800 dark:text-slate-200"}`}>
             {item.content}
           </Text>
           <Text
-            className={`text-[10px] mt-1 self-end ${isMe ? "text-blue-200" : "text-gray-400"}`}
+            className={`text-[10px] mt-1 self-end ${isMe ? "text-violet-200" : "text-gray-400"}`}
           >
             {new Date(item.createdAt).toLocaleTimeString()}
           </Text>
@@ -400,7 +402,7 @@ const ChatContainer = ({ chatId }) => {
                 chatDetails?.members?.find((member) => member.userId == item.senderId)?.user?.firstName
               )
             }}
-            className="w-8 h-8 ml-2 rounded-full border-2 border-blue-500 shrink-0"
+            className="w-8 h-8 ml-2 rounded-full border-2 border-violet-500 shrink-0"
           />
         )}
       </View>
@@ -411,7 +413,7 @@ const ChatContainer = ({ chatId }) => {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      className="flex-1 flex-row bg-[#f5f6f8]"
+      className="flex-1 flex-row bg-[#f5f6f8] dark:bg-slate-950"
     >
       {/* 
         SIDEBAR 
@@ -419,16 +421,16 @@ const ChatContainer = ({ chatId }) => {
         Desktop logic (lg): always visible, fixed width of 80 (320px).
       */}
       <View
-        className={`bg-white border-r border-gray-200 lg:w-80 lg:flex-none ${isChatSelected ? 'hidden lg:flex' : 'flex-1'
+        className={`bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 lg:w-80 lg:flex-none ${isChatSelected ? 'hidden lg:flex' : 'flex-1'
           }`}
       >
-        <View className="h-14 w-full flex-col justify-center px-4 border-b border-gray-100">
-          <View className="flex-row items-center bg-gray-100 rounded-full px-3 h-9">
+        <View className="h-14 w-full flex-col justify-center px-4 border-b border-gray-100 dark:border-slate-800">
+          <View className="flex-row items-center bg-gray-100 dark:bg-slate-800 rounded-full px-3 h-9">
             <Ionicons name="search" size={16} color="#9ca3af" />
             <TextInput
               placeholderTextColor="#9ca3af"
               placeholder="Search chats"
-              className="flex-1 ml-2 text-sm text-gray-800"
+              className="flex-1 ml-2 text-sm text-gray-800 dark:text-slate-200"
               value={searchQuery}
               onChangeText={setSearchQuery}
 
@@ -448,55 +450,82 @@ const ChatContainer = ({ chatId }) => {
       {/*Chat Create Modal*/}
 
       <Modal visible={isChatCreateModalVisible} transparent animationType="fade">
-        <View className="flex-1 items-center justify-center bg-black/50">
-          <View className="bg-white p-5 rounded-lg shadow-lg gap-3">
-            <Text className="text-lg font-semibold">Create Group Chat</Text>
-            <View className="border border-gray-200 rounded-lg h-10 p-2">
-              <TextInput value={chatCreateModalChatName} onChangeText={(text) => setChatCreateModalChatName(text)} placeholderTextColor={"#9ca3af"} placeholder='Chat Name' />
+        <View className="flex-1 items-center justify-center bg-black/60 px-5">
+          <View className="bg-white dark:bg-slate-900 w-full max-w-[380px] rounded-2xl overflow-hidden" style={{ shadowColor: "#7c3aed", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 24, elevation: 16 }}>
+            <View className="px-6 pt-6 pb-4 border-b border-gray-100 dark:border-slate-800">
+              <Text className="text-base font-bold text-gray-900 dark:text-white">Create Group Chat</Text>
+              <Text className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">Give your group a name to get started</Text>
             </View>
-
-            <Button title='Create Chat' onPress={() => createGroupChat()} />
-            <Button color="#f05757ff" title='Cancel' onPress={() => setIsChatCreateModalVisible(false)} />
+            <View className="px-6 py-5 gap-4">
+              <TextInput
+                value={chatCreateModalChatName}
+                onChangeText={(text) => setChatCreateModalChatName(text)}
+                placeholderTextColor={"#9ca3af"}
+                placeholder='Chat Name'
+                className="border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-slate-800"
+              />
+              <View className="flex-row gap-3">
+                <Pressable onPress={() => setIsChatCreateModalVisible(false)} className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-slate-800 items-center active:bg-gray-200 dark:active:bg-slate-700">
+                  <Text className="text-sm font-semibold text-gray-700 dark:text-slate-300">Cancel</Text>
+                </Pressable>
+                <Pressable onPress={() => createGroupChat()} className="flex-1 py-3 rounded-xl bg-violet-600 items-center active:bg-violet-700">
+                  <Text className="text-sm font-semibold text-white">Create</Text>
+                </Pressable>
+              </View>
+            </View>
           </View>
         </View>
       </Modal>
 
       {/*Followers Invite Modal*/}
-
       <Modal transparent visible={chatInviteModalVisible}>
-        <View className="flex-1 bg-black/50 justify-center items-center">
-          <View className="bg-white p-3 gap-2 rounded-lg">
-            <Text className="text-lg font-semibold mb-2 self-center">Invite Your Followers</Text>
+        <View className="flex-1 bg-black/60 justify-center items-center px-5">
+          <View className="bg-white dark:bg-slate-900 w-full max-w-[380px] rounded-2xl overflow-hidden" style={{ shadowColor: "#7c3aed", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 24, elevation: 16 }}>
+            <View className="px-6 pt-6 pb-4 border-b border-gray-100 dark:border-slate-800 flex-row items-center gap-3">
+              <View className="w-9 h-9 rounded-xl bg-violet-100 dark:bg-violet-950/50 items-center justify-center">
+                <Ionicons name="person-add-outline" size={16} color="#7c3aed" />
+              </View>
+              <View>
+                <Text className="text-base font-bold text-gray-900 dark:text-white">Invite Followers</Text>
+                <Text className="text-xs text-gray-400 dark:text-slate-500">Select people to add to the group</Text>
+              </View>
+            </View>
             <FlatList
               data={uninvitedFollowers}
               keyExtractor={(item) => item.id}
+              style={{ maxHeight: 280 }}
               renderItem={({ item }) => {
                 const isSelected = selectedUninvitedFollowers.includes(item.id);
                 return (
                   <Pressable
                     onPress={() => toggleFollowerSelection(item.id)}
-                    className="flex-row gap-2 items-center border-b border-gray-200 p-2 min-w-[200px]"
+                    className={`flex-row gap-3 items-center border-b border-gray-100 dark:border-slate-800 px-5 py-3 ${
+                      isSelected ? "bg-violet-50 dark:bg-violet-950/20" : ""
+                    }`}
                   >
-                    <Image source={{ uri: "https://placehold.co/150x150" }} className="w-8 h-8 rounded-full" />
-                    <Text className="text-[15px]">{item.firstName + " " + item.lastName}</Text>
+                    <Image source={{ uri: "https://placehold.co/150x150" }} className="w-9 h-9 rounded-full" />
+                    <Text className="flex-1 text-sm font-medium text-gray-800 dark:text-slate-200">{item.firstName + " " + item.lastName}</Text>
                     <Ionicons
-                      className="ml-auto"
-                      size={15}
+                      size={18}
                       name={isSelected ? "checkbox" : "square-outline"}
-                      color={isSelected ? "#2563eb" : "gray"}
+                      color={isSelected ? "#7c3aed" : isDarkMode ? "#475569" : "#d1d5db"}
                     />
                   </Pressable>
                 );
               }}
               ListEmptyComponent={() => (
-                <View className="flex-1 items-center justify-center">
-                  <Text className="text-gray-500">No followers to invite</Text>
+                <View className="py-10 items-center justify-center">
+                  <Text className="text-gray-400 dark:text-slate-500 text-sm">No followers to invite</Text>
                 </View>
               )}
             />
-            <View className="flex-row justify-end gap-3 mt-4">
-              <Button color="#f05757ff" title='Cancel' onPress={() => { setChatInviteModalVisible(false); setSelectedUninvitedFollowers([]); }} />
-              <Button title='Invite' onPress={() => inviteFollowers()} />
+            <View className="flex-row gap-3 px-5 py-4">
+              <Pressable onPress={() => { setChatInviteModalVisible(false); setSelectedUninvitedFollowers([]); }} className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-slate-800 items-center active:bg-gray-200 dark:active:bg-slate-700">
+                <Text className="text-sm font-semibold text-gray-700 dark:text-slate-300">Cancel</Text>
+              </Pressable>
+              <Pressable onPress={() => inviteFollowers()} className="flex-1 py-3 rounded-xl bg-violet-600 items-center active:bg-violet-700">
+                <Text className="text-sm font-semibold text-white">Invite</Text>
+              </Pressable>
             </View>
           </View>
         </View>
@@ -508,34 +537,34 @@ const ChatContainer = ({ chatId }) => {
         Desktop logic (lg): always visible, takes remaining space.
       */}
       <View
-        className={`bg-[#f5f6f8] lg:flex lg:flex-1 ${isChatSelected ? 'flex-1' : 'hidden'
+        className={`bg-[#f5f6f8] dark:bg-slate-950 lg:flex lg:flex-1 ${isChatSelected ? 'flex-1' : 'hidden'
           }`}
       >
         {chatId === "ai" ? <AiChat /> : isChatSelected ? (
           // --- ACTIVE CHAT UI ---
           <>
             {/* Chat Header */}
-            <View className="flex-row h-14 items-center bg-white px-4 border-b border-gray-200">
+            <View className="flex-row h-14 items-center bg-white dark:bg-slate-900 px-4 border-b border-gray-200 dark:border-slate-800">
               {/* Back button strictly for mobile so users can return to the ChatList */}
               <Pressable
                 className="mr-3 lg:hidden p-1"
                 onPress={() => router.push("/chat")}
               >
-                <Ionicons name="chevron-back" size={24} color="#6b7280" />
+                <Ionicons name="chevron-back" size={24} color={isDarkMode ? "#94a3b8" : "#6b7280"} />
               </Pressable>
 
               <View className="flex-row items-center flex-1 gap-3">
                 <Image
                   source={{ uri: chatDetails?.chatAvatar }}
-                  className="w-9 h-9 rounded-full bg-gray-100"
+                  className="w-9 h-9 rounded-full bg-gray-100 dark:bg-slate-800"
                 />
                 <View className="flex-col">
-                  <Text className="text-sm font-semibold text-gray-900">{chatDetails?.chatName}</Text>
-                  {chatType == 'group' ? <Text className="text-xs text-gray-500 font-medium">{chatDetails.members?.length + " " + "members"}</Text> : <Text className="text-xs text-gray-400 font-medium">Last Seen Recently</Text>}
+                  <Text className="text-sm font-semibold text-gray-900 dark:text-white">{chatDetails?.chatName}</Text>
+                  {chatType == 'group' ? <Text className="text-xs text-gray-500 dark:text-slate-400 font-medium">{chatDetails.members?.length + " " + "members"}</Text> : <Text className="text-xs text-gray-400 dark:text-slate-500 font-medium">Last Seen Recently</Text>}
                 </View>
               </View>
 
-              <Pressable onPress={() => setIsMenuVisible(true)} className="p-2 rounded-full hover:bg-gray-100">
+              <Pressable onPress={() => setIsMenuVisible(true)} className="p-2 rounded-full hover:bg-gray-100 dark:bg-slate-800">
                 <Ionicons name="ellipsis-vertical" size={18} color="#9ca3af" />
               </Pressable>
             </View>
@@ -556,8 +585,8 @@ const ChatContainer = ({ chatId }) => {
               ListFooterComponent={
                 isLoadingOlderMessages ? (
                   <View className="py-3 items-center justify-center">
-                    <ActivityIndicator size="small" color="#2563eb" />
-                    <Text className="text-[11px] text-gray-400 mt-1">
+                    <ActivityIndicator size="small" color="#7c3aed" />
+                    <Text className="text-[11px] text-gray-400 dark:text-slate-500 mt-1">
                       Loading older messages...
                     </Text>
                   </View>
@@ -566,11 +595,11 @@ const ChatContainer = ({ chatId }) => {
             />
 
             {/* Input Area */}
-            <View className="bg-white px-4 py-2.5 border-t border-gray-200 flex-row items-center gap-2">
+            <View className="bg-white dark:bg-slate-900 px-4 py-2.5 border-t border-gray-200 dark:border-slate-800 flex-row items-center gap-2">
 
-              <View className="flex-row flex-1 bg-gray-100 rounded-full items-center px-4 min-h-[40px] max-h-[100px]">
+              <View className="flex-row flex-1 bg-gray-100 dark:bg-slate-800 rounded-full items-center px-4 min-h-[40px] max-h-[100px]">
                 <TextInput
-                  className="flex-1 text-sm text-gray-800 py-2.5"
+                  className="flex-1 text-sm text-gray-800 dark:text-slate-200 py-2.5"
                   placeholder="Message..."
                   placeholderTextColor="#9ca3af"
                   multiline
@@ -582,14 +611,14 @@ const ChatContainer = ({ chatId }) => {
                   <Ionicons
                     name={showEmojiPicker ? "keypad-outline" : "happy-outline"}
                     size={20}
-                    color={showEmojiPicker ? "#2563eb" : "#9ca3af"}
+                    color={showEmojiPicker ? "#7c3aed" : "#9ca3af"}
                   />
                 </Pressable>
               </View>
 
               <Pressable
                 onPress={sendMessage}
-                className={`p-2.5 rounded-full ${message.trim().length > 0 ? 'bg-blue-600' : 'bg-gray-200'}`}
+                className={`p-2.5 rounded-full ${message.trim().length > 0 ? 'bg-violet-600' : 'bg-gray-200 dark:bg-slate-700'}`}
                 disabled={message.trim().length === 0}
               >
                 <Ionicons name="send" size={18} color="white" />
@@ -598,26 +627,26 @@ const ChatContainer = ({ chatId }) => {
 
             {/* Emoji Selector Keyboard */}
             {showEmojiPicker && (
-              <View className="h-64 bg-gray-50 border-t border-gray-200">
+              <View className="h-64 bg-gray-50 dark:bg-slate-950 border-t border-gray-200 dark:border-slate-800">
                 {/* Category Tabs */}
-                <View className="flex-row border-b border-gray-200 bg-white">
+                <View className="flex-row border-b border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900">
                   <Pressable
                     onPress={() => setActiveEmojiCategory("smileys")}
-                    className={`flex-1 py-3 items-center justify-center border-b-2 ${activeEmojiCategory === "smileys" ? "border-blue-600" : "border-transparent"}`}
+                    className={`flex-1 py-3 items-center justify-center border-b-2 ${activeEmojiCategory === "smileys" ? "border-violet-600" : "border-transparent"}`}
                   >
-                    <Ionicons name="happy-outline" size={20} color={activeEmojiCategory === "smileys" ? "#2563eb" : "#6b7280"} />
+                    <Ionicons name="happy-outline" size={20} color={activeEmojiCategory === "smileys" ? "#7c3aed" : "#6b7280"} />
                   </Pressable>
                   <Pressable
                     onPress={() => setActiveEmojiCategory("gestures")}
-                    className={`flex-1 py-3 items-center justify-center border-b-2 ${activeEmojiCategory === "gestures" ? "border-blue-600" : "border-transparent"}`}
+                    className={`flex-1 py-3 items-center justify-center border-b-2 ${activeEmojiCategory === "gestures" ? "border-violet-600" : "border-transparent"}`}
                   >
-                    <Ionicons name="hand-left-outline" size={20} color={activeEmojiCategory === "gestures" ? "#2563eb" : "#6b7280"} />
+                    <Ionicons name="hand-left-outline" size={20} color={activeEmojiCategory === "gestures" ? "#7c3aed" : "#6b7280"} />
                   </Pressable>
                   <Pressable
                     onPress={() => setActiveEmojiCategory("hearts")}
-                    className={`flex-1 py-3 items-center justify-center border-b-2 ${activeEmojiCategory === "hearts" ? "border-blue-600" : "border-transparent"}`}
+                    className={`flex-1 py-3 items-center justify-center border-b-2 ${activeEmojiCategory === "hearts" ? "border-violet-600" : "border-transparent"}`}
                   >
-                    <Ionicons name="heart-outline" size={20} color={activeEmojiCategory === "hearts" ? "#2563eb" : "#6b7280"} />
+                    <Ionicons name="heart-outline" size={20} color={activeEmojiCategory === "hearts" ? "#7c3aed" : "#6b7280"} />
                   </Pressable>
                 </View>
 
@@ -631,7 +660,7 @@ const ChatContainer = ({ chatId }) => {
                   renderItem={({ item }) => (
                     <Pressable
                       onPress={() => handleEmojiSelect(item)}
-                      className="w-10 h-10 items-center justify-center rounded-lg hover:bg-gray-200 active:bg-gray-300"
+                      className="w-10 h-10 items-center justify-center rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 active:bg-gray-300 dark:active:bg-slate-600"
                     >
                       <Text className="text-2xl">{item}</Text>
                     </Pressable>
@@ -643,10 +672,10 @@ const ChatContainer = ({ chatId }) => {
         ) : (
           // --- EMPTY STATE PLACEHOLDER (Desktop Only) ---
           <View className="flex-1 items-center justify-center">
-            <View className="bg-white p-5 rounded-full mb-3 border border-gray-200">
-              <Ionicons name="chatbubbles-outline" size={40} color="#d1d5db" />
+            <View className="bg-white dark:bg-slate-900 p-6 rounded-full mb-4 border border-gray-200 dark:border-slate-800">
+              <Ionicons name="chatbubbles-outline" size={40} color={isDarkMode ? "#475569" : "#d1d5db"} />
             </View>
-            <Text className="text-gray-400 text-sm font-medium">
+            <Text className="text-gray-400 dark:text-slate-500 text-sm font-medium">
               Select a chat to start messaging
             </Text>
           </View>
@@ -654,27 +683,31 @@ const ChatContainer = ({ chatId }) => {
       </View>
 
       <Modal transparent visible={isMenuVisible} onRequestClose={() => setIsMenuVisible(false)}>
-        <Pressable className="flex-1 bg-black/50 justify-center items-center" onPress={() => setIsMenuVisible(false)}>
-          <Pressable className="flex-col bg-white p-5 rounded-lg shadow-lg gap-2" onPress={(e) => e.stopPropagation()}>
+        <Pressable className="flex-1 bg-black/60 justify-center items-center px-5" onPress={() => setIsMenuVisible(false)}>
+          <Pressable
+            className="w-full max-w-[300px] bg-white dark:bg-slate-900 rounded-2xl overflow-hidden"
+            style={{ shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.15, shadowRadius: 24, elevation: 12 }}
+            onPress={(e) => e.stopPropagation()}
+          >
             {
               chatType == "private" &&
-              <Pressable className="flex-row items-center gap-2 border-b border-gray-100 pb-2">
-                <Ionicons name="ban-outline" size={16} color={"#ef4444"} />
-                <Text className="text-lg text-[#ef4444]">Block This Person</Text>
+              <Pressable className="flex-row items-center gap-3 px-5 py-4 border-b border-gray-100 dark:border-slate-800 active:bg-red-50 dark:active:bg-red-950/20">
+                <Ionicons name="ban-outline" size={18} color={"#ef4444"} />
+                <Text className="text-sm font-semibold text-red-500">Block This Person</Text>
               </Pressable>
             }
             {
               chatType == "group" &&
-              <Pressable onPress={() => { setIsMenuVisible(false); setChatInviteModalVisible(true); }} className="flex-row border-b border-gray-100 pb-2 items-center gap-2">
-                <Ionicons name="person-add-outline" size={16} color={"gray"} />
-                <Text className="text-lg text-gray-400">Add Member</Text>
+              <Pressable onPress={() => { setIsMenuVisible(false); setChatInviteModalVisible(true); }} className="flex-row border-b border-gray-100 dark:border-slate-800 px-5 py-4 items-center gap-3 active:bg-gray-50 dark:active:bg-slate-800">
+                <Ionicons name="person-add-outline" size={18} color={isDarkMode ? "#94a3b8" : "#6b7280"} />
+                <Text className="text-sm font-semibold text-gray-700 dark:text-slate-300">Add Member</Text>
               </Pressable>
             }
             {
               chatType == "group" &&
-              <Pressable onPress={() => { setIsMenuVisible(false); setChatLeaveModalVisible(true) }} className="flex-row items-center gap-2">
-                <Ionicons name="person-remove-outline" size={16} color={"#ef4444"} />
-                <Text className="text-lg text-[#ef4444]">Leave Group</Text>
+              <Pressable onPress={() => { setIsMenuVisible(false); setChatLeaveModalVisible(true) }} className="flex-row items-center gap-3 px-5 py-4 active:bg-red-50 dark:active:bg-red-950/20">
+                <Ionicons name="person-remove-outline" size={18} color={"#ef4444"} />
+                <Text className="text-sm font-semibold text-red-500">Leave Group</Text>
               </Pressable>
             }
           </Pressable>
@@ -683,7 +716,7 @@ const ChatContainer = ({ chatId }) => {
 
       <Modal visible={false}>
         <View className="flex-1 items-center justify-center bg-black/50">
-          <View className="bg-white p-5 rounded-lg shadow-lg">
+          <View className="bg-white dark:bg-slate-900 p-5 rounded-lg shadow-lg">
             <Text className="text-lg font-semibold">Block User</Text>
             <Text>Are you sure you want to block this user?</Text>
             <View className="flex-row justify-end gap-2">
@@ -695,13 +728,23 @@ const ChatContainer = ({ chatId }) => {
       </Modal>
 
       <Modal visible={chatLeaveModalVisible} transparent onRequestClose={() => setChatLeaveModalVisible(false)}>
-        <Pressable className="flex-1 items-center justify-center bg-black/50" onPress={() => setChatLeaveModalVisible(false)}>
-          <Pressable className="bg-white p-5 rounded-lg shadow-lg" onPress={(e) => e.stopPropagation()}>
-            <Text className="text-lg font-semibold">Leave Group</Text>
-            <Text className="text-gray-600">Are you sure you want to leave this group?</Text>
-            <View className="flex-row justify-end gap-2 mt-3">
-              <Button title="Cancel" onPress={() => setChatLeaveModalVisible(false)} />
-              <Button title="Leave" color={"#ef4444"} onPress={() => { leaveChat() }} />
+        <Pressable className="flex-1 items-center justify-center bg-black/60 px-5" onPress={() => setChatLeaveModalVisible(false)}>
+          <Pressable
+            className="w-full max-w-[340px] bg-white dark:bg-slate-900 rounded-2xl overflow-hidden"
+            style={{ shadowColor: "#ef4444", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.15, shadowRadius: 24, elevation: 12 }}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View className="px-6 pt-6 pb-4 border-b border-gray-100 dark:border-slate-800">
+              <Text className="text-base font-bold text-gray-900 dark:text-white">Leave Group</Text>
+              <Text className="text-sm text-gray-500 dark:text-slate-400 mt-1">Are you sure you want to leave this group?</Text>
+            </View>
+            <View className="flex-row gap-3 px-6 py-4">
+              <Pressable onPress={() => setChatLeaveModalVisible(false)} className="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-slate-800 items-center active:bg-gray-200 dark:active:bg-slate-700">
+                <Text className="text-sm font-semibold text-gray-700 dark:text-slate-300">Cancel</Text>
+              </Pressable>
+              <Pressable onPress={() => leaveChat()} className="flex-1 py-3 rounded-xl bg-red-500 items-center active:bg-red-600">
+                <Text className="text-sm font-semibold text-white">Leave</Text>
+              </Pressable>
             </View>
           </Pressable>
         </Pressable>

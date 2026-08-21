@@ -14,11 +14,12 @@ import {
 } from "react-native";
 
 import { useApiConfig } from "@/contexts/ApiConfigContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
-const MessageItem = memo(({ item }) => {
+const MessageItem = memo(({ item, isDarkMode }) => {
   const markdownStyle = {
     body: {
-      color: item.role === "user" ? "white" : "#374151",
+      color: item.role === "user" ? "white" : isDarkMode ? "#cbd5e1" : "#374151",
       fontSize: 14,
       lineHeight: 20,
     },
@@ -28,14 +29,14 @@ const MessageItem = memo(({ item }) => {
     <View
       className={`max-w-[75%] rounded-2xl px-4 py-2.5 my-1 ${
         item.role === "user"
-          ? "bg-blue-600 rounded-tr-sm ml-auto mr-3"
-          : "bg-white border border-gray-100 rounded-tl-sm ml-3 mr-auto"
+          ? "bg-violet-600 rounded-tr-sm ml-auto mr-3"
+          : "bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-tl-sm ml-3 mr-auto"
       }`}
     >
       <Markdown style={markdownStyle}>{item.content}</Markdown>
       <Text
         className={`text-[10px] mt-1 self-end ${
-          item.role === "user" ? "text-blue-200" : "text-gray-400"
+          item.role === "user" ? "text-violet-200" : "text-gray-400 dark:text-slate-500"
         }`}
       >
         {item.createdAt ? new Date(item.createdAt).toLocaleTimeString() : ""}
@@ -48,6 +49,7 @@ MessageItem.displayName = "MessageItem";
 
 const AiChat = () => {
   const { getCleanUrl } = useApiConfig();
+  const { isDarkMode } = useTheme();
   const { getToken } = useAuth();
   const getTokenRef = useRef(getToken);
   getTokenRef.current = getToken;
@@ -182,15 +184,15 @@ const AiChat = () => {
   }, [user?.id, getOldMessages]);
 
   const renderMessages = useCallback(({ item }) => {
-    return <MessageItem item={item} />;
-  }, []);
+    return <MessageItem item={item} isDarkMode={isDarkMode} />;
+  }, [isDarkMode]);
 
   const renderFooter = () => {
     if (isLoadingOlder) {
       return (
         <View className="py-3 items-center justify-center">
           <ActivityIndicator size="small" color="#6366f1" />
-          <Text className="text-[11px] text-gray-400 mt-1">
+          <Text className="text-[11px] text-gray-400 dark:text-slate-500 mt-1">
             Loading older messages...
           </Text>
         </View>
@@ -202,7 +204,7 @@ const AiChat = () => {
   return (
     <>
       {/* Chat Header */}
-      <View className="flex-row h-14 items-center bg-white px-4 border-b border-gray-200">
+      <View className="flex-row h-14 items-center bg-white dark:bg-slate-900 px-4 border-b border-gray-200 dark:border-slate-800">
         {/* Back button strictly for mobile so users can return to the ChatList */}
         <Pressable
           className="mr-3 lg:hidden p-1"
@@ -219,7 +221,7 @@ const AiChat = () => {
             <Ionicons name="sparkles" size={16} color="white" />
           </View>
           <View className="flex-col">
-            <Text className="text-sm font-semibold text-gray-900">
+            <Text className="text-sm font-semibold text-gray-900 dark:text-white">
               Student Hub AI
             </Text>
             {isReasoning && (
@@ -228,7 +230,7 @@ const AiChat = () => {
           </View>
         </View>
 
-        <Pressable className="p-2 rounded-full hover:bg-gray-100">
+        <Pressable className="p-2 rounded-full hover:bg-gray-100 dark:bg-slate-800">
           <Ionicons name="ellipsis-vertical" size={18} color="#9ca3af" />
         </Pressable>
       </View>
@@ -250,14 +252,14 @@ const AiChat = () => {
       />
 
       {/* Input Area */}
-      <View className="bg-white px-4 py-2.5 border-t border-gray-200 flex-row items-center gap-2">
-        <Pressable className="p-2 rounded-full hover:bg-gray-100">
+      <View className="bg-white dark:bg-slate-900 px-4 py-2.5 border-t border-gray-200 dark:border-slate-800 flex-row items-center gap-2">
+        <Pressable className="p-2 rounded-full hover:bg-gray-100 dark:bg-slate-800">
           <Ionicons name="add" size={22} color="#9ca3af" />
         </Pressable>
 
-        <View className="flex-row flex-1 bg-gray-100 rounded-full items-center px-4 min-h-[40px] max-h-[100px]">
+        <View className="flex-row flex-1 bg-gray-100 dark:bg-slate-800 rounded-full items-center px-4 min-h-[40px] max-h-[100px]">
           <TextInput
-            className="flex-1 text-sm text-gray-800 py-2.5"
+            className="flex-1 text-sm text-gray-800 dark:text-slate-200 py-2.5"
             placeholder="Ask anything..."
             placeholderTextColor="#9ca3af"
             multiline
@@ -273,7 +275,7 @@ const AiChat = () => {
         <Pressable
           onPress={handleNewMessage}
           className={`p-2.5 rounded-full ${
-            message.trim().length > 0 ? "bg-blue-600" : "bg-gray-200"
+            message.trim().length > 0 ? "bg-violet-600" : "bg-gray-200 dark:bg-slate-700"
           }`}
           disabled={message.trim().length === 0 || isReasoning}
         >

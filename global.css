@@ -2,14 +2,27 @@
 @import 'uniwind';
 
 :root {
-  --color-primary: #2563eb;
-  --color-primary-light: #dbeafe;
+  --color-primary: #7c3aed;
+  --color-primary-light: #f5f3ff;
   --color-bg: #f5f6f8;
   --color-surface: #ffffff;
+  --color-card: #ffffff;
   --color-border: #e5e7eb;
   --color-text: #1f2937;
   --color-text-secondary: #6b7280;
   --color-text-muted: #9ca3af;
+}
+
+.dark {
+  --color-primary: #8b5cf6;
+  --color-primary-light: #1e1b4b;
+  --color-bg: #0f172a;
+  --color-surface: #1e293b;
+  --color-card: #1e293b;
+  --color-border: #334155;
+  --color-text: #f8fafc;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: #64748b;
 }
 
 input:focus {

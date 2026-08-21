@@ -48,32 +48,32 @@ const Comment = ({ comment, setToReply, currentUser }) => {
 
     return (
         <>
-            <View key={comment.id} className='border-b border-gray-100 py-3 px-1'>
+            <View key={comment.id} className='border-b border-gray-100 dark:border-slate-800 py-3 px-1'>
                 <View className="flex flex-row gap-3 items-start">
                     <Image
                         source={{ uri: getAvatarUrl(comment.author, getCleanUrl) }}
-                        className="w-[36px] h-[36px] rounded-full bg-gray-100"
+                        className="w-[36px] h-[36px] rounded-full bg-gray-100 dark:bg-slate-800"
                     />
                     <View className="flex flex-col flex-1">
-                        <Text className='text-sm font-semibold text-gray-900'>{comment.author?.firstName + ' ' + comment.author?.lastName}</Text>
-                        <Text className='text-sm text-gray-600 mt-0.5 leading-5'>{comment.content}</Text>
+                        <Text className='text-sm font-semibold text-gray-900 dark:text-white'>{comment.author?.firstName + ' ' + comment.author?.lastName}</Text>
+                        <Text className='text-sm text-gray-600 dark:text-slate-300 mt-0.5 leading-5'>{comment.content}</Text>
                         <View className="flex flex-row gap-4 mt-2 items-center">
                             <Pressable onPress={handleLikeComment} className="flex-row items-center gap-1.5">
                                 {isLiked ? (
-                                    <FontAwesome name="thumbs-up" size={14} color="#2563eb" />
+                                    <FontAwesome name="thumbs-up" size={14} color="#7c3aed" />
                                 ) : (
                                     <FontAwesome5 name="thumbs-up" size={13} color="#9ca3af" />
                                 )}
                                 {likesCount > 0 && (
-                                    <Text className={`text-xs font-semibold ${isLiked ? 'text-blue-600' : 'text-gray-400'}`}>{likesCount}</Text>
+                                    <Text className={`text-xs font-semibold ${isLiked ? 'text-violet-600' : 'text-gray-400 dark:text-slate-400'}`}>{likesCount}</Text>
                                 )}
                             </Pressable>
                             <Pressable onPress={() => setToReply(comment.id)}>
-                                <Text className='text-xs font-semibold text-blue-600'>Reply</Text>
+                                <Text className='text-xs font-semibold text-violet-600'>Reply</Text>
                             </Pressable>
                             {comment.replies?.length > 0 && (
                                 <Pressable onPress={() => setShowReplies(!showReplies)}>
-                                    <Text className='text-xs font-semibold text-gray-500'>
+                                    <Text className='text-xs font-semibold text-gray-500 dark:text-slate-400'>
                                         {showReplies ? 'Hide' : 'View'} {comment.replies.length} {comment.replies.length === 1 ? 'reply' : 'replies'}
                                     </Text>
                                 </Pressable>
@@ -83,7 +83,7 @@ const Comment = ({ comment, setToReply, currentUser }) => {
                 </View>
             </View>
             {comment.replies?.length > 0 && showReplies && (
-                <View className='ml-10 border-l-2 border-gray-100 pl-3'>
+                <View className='ml-10 border-l-2 border-gray-100 dark:border-slate-800 pl-3'>
                     {comment.replies.map((reply) => (
                         <ReplyItem key={reply.id} reply={reply} currentUser={currentUser} />
                     ))}
@@ -127,20 +127,20 @@ const ReplyItem = ({ reply, currentUser }) => {
             <View className="flex flex-row gap-3 items-start">
                 <Image
                     source={{ uri: getAvatarUrl(reply.author, getCleanUrl) }}
-                    className="w-[30px] h-[30px] rounded-full bg-gray-100"
+                    className="w-[30px] h-[30px] rounded-full bg-gray-100 dark:bg-slate-800"
                 />
                 <View className="flex flex-col flex-1">
-                    <Text className='text-sm font-semibold text-gray-900'>{reply.author?.firstName + ' ' + reply.author?.lastName}</Text>
-                    <Text className='text-sm text-gray-600 mt-0.5 leading-5'>{reply.content}</Text>
+                    <Text className='text-sm font-semibold text-gray-900 dark:text-white'>{reply.author?.firstName + ' ' + reply.author?.lastName}</Text>
+                    <Text className='text-sm text-gray-600 dark:text-slate-300 mt-0.5 leading-5'>{reply.content}</Text>
                     <View className="flex flex-row gap-4 mt-1.5 items-center">
                         <Pressable onPress={handleLikeReply} className="flex-row items-center gap-1.5">
                             {isLiked ? (
-                                <FontAwesome name="thumbs-up" size={12} color="#2563eb" />
+                                <FontAwesome name="thumbs-up" size={12} color="#7c3aed" />
                             ) : (
                                 <FontAwesome5 name="thumbs-up" size={11} color="#9ca3af" />
                             )}
                             {likesCount > 0 && (
-                                <Text className={`text-xs font-semibold ${isLiked ? 'text-blue-600' : 'text-gray-400'}`}>{likesCount}</Text>
+                                <Text className={`text-xs font-semibold ${isLiked ? 'text-violet-600' : 'text-gray-400 dark:text-slate-400'}`}>{likesCount}</Text>
                             )}
                         </Pressable>
                     </View>

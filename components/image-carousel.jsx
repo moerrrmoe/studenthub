@@ -64,7 +64,7 @@ const ImageCarousel = ({ images }) => {
             <View
               key={index}
               style={{ width }}
-              className="h-[400px] justify-center items-center bg-gray-100"
+              className="h-[400px] justify-center items-center bg-gray-100 dark:bg-slate-800"
             >
               <Image
                 source={{ uri: getCleanUrl(image) }}
@@ -101,7 +101,7 @@ const ImageCarousel = ({ images }) => {
           {images.map((_, index) => (
             <View
               key={index}
-              className={`h-1.5 rounded-full transition-all duration-300 ${index === activeIndex ? "w-3 bg-white" : "w-1.5 bg-white/50"
+              className={`h-1.5 rounded-full transition-all duration-300 ${index === activeIndex ? "w-3 bg-white dark:bg-slate-900" : "w-1.5 bg-white dark:bg-slate-900/50"
                 }`}
             />
           ))}
